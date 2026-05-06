@@ -1,0 +1,6 @@
+docker compose up -d
+
+docker compose exec spark-hive bash /workspace/scripts/spark-shell/run_pipeline.sh
+docker compose exec spark-hive bash /workspace/scripts/hive/run_select.sh
+docker compose exec spark-hive bash /workspace/scripts/spark-shell/run_read_source.sh
+docker compose exec spark-hive bash /workspace/scripts/spark-shell/run_read_target.sh

@@ -1,0 +1,15 @@
+services:
+  spark-hive:
+    image: apache/spark:3.5.2
+    container_name: parquet-transform-spark-hive
+    working_dir: /workspace
+    environment:
+      PARQUET_PATH: /data/parquet/input
+      SPARK_HOME: /opt/spark
+      PATH: /opt/spark/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+      SPARK_SQL_WAREHOUSE_DIR: /workspace/spark-warehouse
+    volumes:
+      - ./:/workspace
+      - ./target/data/parquet/input:/data/parquet/input
+      - ./target/spark-warehouse:/workspace/spark-warehouse
+    command: ["bash", "-lc", "sleep infinity"]

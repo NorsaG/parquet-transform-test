@@ -1,0 +1,22 @@
+Код трансформации,Source тип,Алгоритм,Target тип,STORK,PPRB/SuperNova
+TS1,date,"Date -> Timestamp (int96); java.sql.Timestamp; сохранить как int96",Timestamp,"Pangolin date (0001-01-01..9999-12-31)",n/a
+TS2,integer,"integer -> smallint",smallint,"Pangolin smallint",n/a
+TS3,string,"string -> decimal(38,12); BigDecimal(p,s) или cast",decimal(38,12),"Pangolin numeric",n/a
+TS4,string,"string -> Timestamp; формат yyyy-MM-dd HH:mm:ss.SSSSSS; сохранить как int96",Timestamp,"timestamp without timezone",n/a
+TS5 (T9),string,"обрезка до микросекунд; убрать T (ISO8601)",string,"timestamp without timezone",LocalDateTime
+TS6,string,"как TS5 + убрать :00 в offset если 0",string,"timestamp with timezone",n/a
+TS7,string,"string -> decimal(19,2); BigDecimal или cast",decimal(19,2),"money",n/a
+TS8,string,"обрезка до микросекунд (TIME)",string,"time without timezone",n/a
+TS9 (T1),string,"BigInteger -> long",long,n/a,BigInteger
+TS10 (T2),float,"float -> decimal(38,12)",decimal(38,12),n/a,float
+TS11 (T3),float,"float -> double",double,n/a,float
+TS12 (T4),double,"double -> decimal(38,12)",decimal(38,12),n/a,double
+TS13 (T5),string,"OffsetDateTime -> строка без offset",string,n/a,OffsetDateTime
+TS14 (T6),string,"OffsetDateTime -> UTC -> строка",string,n/a,OffsetDateTime
+TS15 (T7),string,"ZonedDateTime -> строка без зоны",string,n/a,"ZonedDateTime/Date/Timestamp/Instant"
+TS16 (T8),string,"ZonedDateTime -> UTC -> строка",string,n/a,"ZonedDateTime/Date/Timestamp/Instant"
+TS17 (T10),date,"yyyy-MM-dd HH:mm:ss.SSSSSS -> string",string,n/a,"java.sql.Date/LocalDate"
+TS18 (T13),string,"HH:mm:ss.SSSSSS -> LocalTime.toString()",string,n/a,LocalTime
+TS19 (T14),string,"polymorphic_type:value -> split ':' + replace '.' на '_'",string/typekey,n/a,REFERENCE
+TS20 (T15),string,"на входе предполагается строка с JSON ARRAY: [{"key":"k1","type":"TypeA"}]. Распарсить JSON, для каждого элемента массива сформировать строку вида key:type:timestamp:status, где а) взять key и type из вложенных JSON объектов, б) timestamp = System.currentTimeMillis(), в) status = I. соединить элементы через ; и записать полученную строку","string key:type:timestamp:status",n/a,REFERENCE
+TS21 (T16),string,"на входе предполагается строка с JSON ARRAY: [{"123","12345",null}]. Распарсить JSON, для каждого элемента массива соединить строковые представления элементов через разделитель | и записать полученную строку","string 123|12345|null",n/a,REFERENCE
