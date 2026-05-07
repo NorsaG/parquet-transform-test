@@ -19,7 +19,10 @@
   - `src/main/resources/sql/generate_parquet_data.sql`
   - `scripts/hive/select_from_hive.sql`
   - `scripts/hive/select_from_hive_beeline.sql`
+  - `scripts/hive/select_datetime_edge_cases.sql`
+  - `scripts/hive/select_datetime_edge_cases_beeline.sql`
   - `scripts/hive/run_select.sh`
+  - `scripts/hive/run_select_datetime_edge_cases.sh`
 - Spark-shell scripts:
   - `scripts/spark-shell/pipeline.scala`
   - `scripts/spark-shell/read_source.scala`
@@ -43,6 +46,11 @@ docker compose exec spark-hive bash /workspace/scripts/spark-shell/run_pipeline.
 2) Выборка из Hive (через `spark-sql`):
 ```powershell
 docker compose exec spark-hive bash /workspace/scripts/hive/run_select.sh
+```
+
+2.1) Выборка граничных кейсов дат/времени:
+```powershell
+docker compose exec spark-hive bash /workspace/scripts/hive/run_select_datetime_edge_cases.sh
 ```
 
 3) Аналогичный запрос для beeline:
