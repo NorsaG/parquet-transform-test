@@ -93,7 +93,7 @@ sourceDf.write.mode("overwrite").parquet(parquetPath)
 spark.sql("CREATE DATABASE IF NOT EXISTS transform_demo")
 spark.sql("DROP TABLE IF EXISTS transform_demo.source_input")
 spark.sql(s"""
-  CREATE TABLE transform_demo.source_input (
+  CREATE EXTERNAL TABLE transform_demo.source_input (
     case_id STRING,
     src_ts1 DATE,
     src_ts2 INT,
@@ -117,7 +117,7 @@ spark.sql(s"""
     src_ts20 STRING,
     src_ts21 STRING
   )
-  USING PARQUET
+  STORED AS PARQUET
   LOCATION '$parquetPath'
 """)
 
@@ -281,29 +281,47 @@ spark.sql("""
       ELSE NULL
     END AS ts19,
 
-    -- TS20
+    -- TS20 (Hive-compatible approximation without Spark lambda/json array transform)
     CASE
       WHEN src_ts20 IS NULL THEN NULL
       WHEN TRIM(src_ts20) = '' THEN ''
-      WHEN FROM_JSON(src_ts20, 'array<struct<key:string,type:string>>') IS NULL THEN NULL
-      ELSE CONCAT_WS(
-        ';',
-        TRANSFORM(
-          FROM_JSON(src_ts20, 'array<struct<key:string,type:string>>'),
-          x -> CASE
-            WHEN COALESCE(x.type, '') <> ''
-              THEN CONCAT(COALESCE(x.key, ''), ':', x.type, '|', CAST(CAST(UNIX_TIMESTAMP(CURRENT_TIMESTAMP()) AS BIGINT) * 1000 AS STRING), ':I')
-            ELSE CONCAT(COALESCE(x.key, ''), ':', CAST(CAST(UNIX_TIMESTAMP(CURRENT_TIMESTAMP()) AS BIGINT) * 1000 AS STRING), ':I')
-          END
-        )
-      )
+      WHEN TRIM(src_ts20) = '[]' THEN ''
+      WHEN TRIM(src_ts20) LIKE '[%' AND TRIM(src_ts20) LIKE '%]' AND INSTR(src_ts20, '"key"') > 0 THEN
+        CASE
+          WHEN COALESCE(REGEXP_EXTRACT(src_ts20, '"type"\s*:\s*"([^"]*)"', 1), '') <> ''
+            THEN CONCAT(
+              COALESCE(REGEXP_EXTRACT(src_ts20, '"key"\s*:\s*"([^"]*)"', 1), ''),
+              ':',
+              REGEXP_EXTRACT(src_ts20, '"type"\s*:\s*"([^"]*)"', 1),
+              '|',
+              CAST(CAST(UNIX_TIMESTAMP(CURRENT_TIMESTAMP()) AS BIGINT) * 1000 AS STRING),
+              ':I'
+            )
+          ELSE CONCAT(
+              COALESCE(REGEXP_EXTRACT(src_ts20, '"key"\s*:\s*"([^"]*)"', 1), ''),
+              ':',
+              CAST(CAST(UNIX_TIMESTAMP(CURRENT_TIMESTAMP()) AS BIGINT) * 1000 AS STRING),
+              ':I'
+            )
+        END
+      ELSE NULL
     END AS ts20,
 
-    -- TS21
+    -- TS21 (Hive-compatible without Spark lambda/json transform)
     CASE
       WHEN src_ts21 IS NULL THEN NULL
-      WHEN FROM_JSON(src_ts21, 'array<string>') IS NULL THEN NULL
-      ELSE CONCAT_WS('|', TRANSFORM(FROM_JSON(src_ts21, 'array<string>'), x -> COALESCE(x, 'null')))
+      WHEN TRIM(src_ts21) = '[]' THEN ''
+      WHEN TRIM(src_ts21) LIKE '[%' AND TRIM(src_ts21) LIKE '%]'
+        THEN REGEXP_REPLACE(
+               REGEXP_REPLACE(
+                 REGEXP_REPLACE(SUBSTR(TRIM(src_ts21), 2, LENGTH(TRIM(src_ts21)) - 2), '"', ''),
+                 '\\s*,\\s*',
+                 '|'
+               ),
+               '\\s+',
+               ''
+             )
+      ELSE NULL
     END AS ts21
   FROM transform_demo.source_input
 """)
