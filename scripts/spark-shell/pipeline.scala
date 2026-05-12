@@ -134,7 +134,7 @@ spark.sql("""
     CASE
       WHEN src_ts4 IS NULL OR TRIM(src_ts4) = '' THEN NULL
       WHEN TRIM(src_ts4) RLIKE '^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{9}$'
-        THEN TO_TIMESTAMP(SUBSTR(TRIM(src_ts4), 1, 26), 'yyyy-MM-dd\'T\'HH:mm:ss.SSSSSS')
+        THEN CAST(FROM_UNIXTIME(UNIX_TIMESTAMP(SUBSTR(TRIM(src_ts4), 1, 26), 'yyyy-MM-dd\'T\'HH:mm:ss.SSSSSS')) AS TIMESTAMP)
       ELSE NULL
     END AS ts4,
 
@@ -142,7 +142,7 @@ spark.sql("""
     CASE
       WHEN src_ts5 IS NULL OR TRIM(src_ts5) = '' THEN NULL
       WHEN TRIM(src_ts5) RLIKE '^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{9}$'
-           AND TO_TIMESTAMP(CONCAT(SUBSTR(TRIM(src_ts5),1,10), ' ', SUBSTR(TRIM(src_ts5),12,8)), 'yyyy-MM-dd HH:mm:ss') IS NOT NULL
+           AND UNIX_TIMESTAMP(CONCAT(SUBSTR(TRIM(src_ts5),1,10), ' ', SUBSTR(TRIM(src_ts5),12,8)), 'yyyy-MM-dd HH:mm:ss') IS NOT NULL
         THEN CONCAT(SUBSTR(TRIM(src_ts5), 1, 10), ' ', SUBSTR(TRIM(src_ts5), 12, 8), '.', SUBSTR(TRIM(src_ts5), 21, 6))
       ELSE NULL
     END AS ts5,
@@ -179,7 +179,7 @@ spark.sql("""
     CASE
       WHEN src_ts8 IS NULL OR TRIM(src_ts8) = '' THEN NULL
       WHEN TRIM(src_ts8) RLIKE '^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]\.[0-9]{8}$'
-        THEN DATE_FORMAT(TO_TIMESTAMP(TRIM(src_ts8), 'HH:mm:ss.SSSSSSSS'), 'HH:mm:ss.SSSSSS')
+        THEN FROM_UNIXTIME(UNIX_TIMESTAMP(TRIM(src_ts8), 'HH:mm:ss.SSSSSSSS'), 'HH:mm:ss.SSSSSS')
       ELSE NULL
     END AS ts8,
 
@@ -194,7 +194,7 @@ spark.sql("""
     CASE
       WHEN src_ts13 IS NULL OR TRIM(src_ts13) = '' THEN NULL
       WHEN TRIM(src_ts13) RLIKE '^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{9}(Z|[+-][0-9]{2}:?[0-9]{2})$'
-           AND TO_TIMESTAMP(CONCAT(SUBSTR(TRIM(src_ts13),1,10), ' ', SUBSTR(TRIM(src_ts13),12,8)), 'yyyy-MM-dd HH:mm:ss') IS NOT NULL
+           AND UNIX_TIMESTAMP(CONCAT(SUBSTR(TRIM(src_ts13),1,10), ' ', SUBSTR(TRIM(src_ts13),12,8)), 'yyyy-MM-dd HH:mm:ss') IS NOT NULL
         THEN CONCAT(SUBSTR(TRIM(src_ts13),1,10), ' ', SUBSTR(TRIM(src_ts13),12,8), '.', SUBSTR(TRIM(src_ts13),21,6))
       ELSE NULL
     END AS ts13,
@@ -203,10 +203,10 @@ spark.sql("""
     CASE
       WHEN src_ts14 IS NULL OR TRIM(src_ts14) = '' THEN NULL
       WHEN TRIM(src_ts14) RLIKE '^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{9}(Z|[+-][0-9]{2}:?[0-9]{2})$'
-           AND TO_TIMESTAMP(CONCAT(SUBSTR(TRIM(src_ts14),1,10), ' ', SUBSTR(TRIM(src_ts14),12,8), '.', SUBSTR(TRIM(src_ts14),21,6)), 'yyyy-MM-dd HH:mm:ss.SSSSSS') IS NOT NULL
+           AND UNIX_TIMESTAMP(CONCAT(SUBSTR(TRIM(src_ts14),1,10), ' ', SUBSTR(TRIM(src_ts14),12,8), '.', SUBSTR(TRIM(src_ts14),21,6)), 'yyyy-MM-dd HH:mm:ss.SSSSSS') IS NOT NULL
         THEN DATE_FORMAT(
           TO_UTC_TIMESTAMP(
-            TO_TIMESTAMP(CONCAT(SUBSTR(TRIM(src_ts14),1,10), ' ', SUBSTR(TRIM(src_ts14),12,8), '.', SUBSTR(TRIM(src_ts14),21,6)), 'yyyy-MM-dd HH:mm:ss.SSSSSS'),
+            CAST(FROM_UNIXTIME(UNIX_TIMESTAMP(CONCAT(SUBSTR(TRIM(src_ts14),1,10), ' ', SUBSTR(TRIM(src_ts14),12,8), '.', SUBSTR(TRIM(src_ts14),21,6)), 'yyyy-MM-dd HH:mm:ss.SSSSSS')) AS TIMESTAMP),
             CASE
               WHEN REGEXP_EXTRACT(TRIM(src_ts14), '(Z|[+-][0-9]{2}:?[0-9]{2})$', 1) = 'Z' THEN '+00:00'
               WHEN REGEXP_EXTRACT(TRIM(src_ts14), '(Z|[+-][0-9]{2}:?[0-9]{2})$', 1) RLIKE '^[+-][0-9]{4}$'
@@ -228,7 +228,7 @@ spark.sql("""
         THEN DATE_FORMAT(
           FROM_UTC_TIMESTAMP(
             TO_UTC_TIMESTAMP(
-              TO_TIMESTAMP(CONCAT(SUBSTR(TRIM(src_ts15),1,10), ' ', SUBSTR(TRIM(src_ts15),12,8), '.', SUBSTR(TRIM(src_ts15),21,6)), 'yyyy-MM-dd HH:mm:ss.SSSSSS'),
+              CAST(FROM_UNIXTIME(UNIX_TIMESTAMP(CONCAT(SUBSTR(TRIM(src_ts15),1,10), ' ', SUBSTR(TRIM(src_ts15),12,8), '.', SUBSTR(TRIM(src_ts15),21,6)), 'yyyy-MM-dd HH:mm:ss.SSSSSS')) AS TIMESTAMP),
               CASE
                 WHEN REGEXP_EXTRACT(TRIM(src_ts15), '(Z|[+-][0-9]{2}:[0-9]{2})', 1) = 'Z' THEN '+00:00'
                 ELSE REGEXP_EXTRACT(TRIM(src_ts15), '(Z|[+-][0-9]{2}:[0-9]{2})', 1)
@@ -247,7 +247,7 @@ spark.sql("""
       WHEN TRIM(src_ts16) LIKE '%[%' AND TRIM(src_ts16) LIKE '%]%'
         THEN DATE_FORMAT(
           TO_UTC_TIMESTAMP(
-            TO_TIMESTAMP(CONCAT(SUBSTR(TRIM(src_ts16),1,10), ' ', SUBSTR(TRIM(src_ts16),12,8), '.', SUBSTR(TRIM(src_ts16),21,6)), 'yyyy-MM-dd HH:mm:ss.SSSSSS'),
+            CAST(FROM_UNIXTIME(UNIX_TIMESTAMP(CONCAT(SUBSTR(TRIM(src_ts16),1,10), ' ', SUBSTR(TRIM(src_ts16),12,8), '.', SUBSTR(TRIM(src_ts16),21,6)), 'yyyy-MM-dd HH:mm:ss.SSSSSS')) AS TIMESTAMP),
             CASE
               WHEN REGEXP_EXTRACT(TRIM(src_ts16), '(Z|[+-][0-9]{2}:[0-9]{2})', 1) = 'Z' THEN '+00:00'
               ELSE REGEXP_EXTRACT(TRIM(src_ts16), '(Z|[+-][0-9]{2}:[0-9]{2})', 1)
