@@ -1,7 +1,4 @@
 import java.sql.Date
-import org.apache.spark.sql.RowFactory
-import org.apache.spark.sql.types.DataTypes
-import org.apache.spark.sql.types.StructField
 
 spark.sparkContext.setLogLevel("WARN")
 import spark.implicits._
@@ -12,46 +9,92 @@ spark.conf.set("spark.sql.parquet.int96RebaseModeInWrite", "LEGACY")
 val parquetBasePath = sys.env.getOrElse("PARQUET_PATH", "/data/parquet/input")
 val parquetPath = s"$parquetBasePath/run_${System.currentTimeMillis()}"
 
-val schema = DataTypes.createStructType(Array[StructField](
-  DataTypes.createStructField("src_ts1", DataTypes.DateType, true),
-  DataTypes.createStructField("src_ts2", DataTypes.IntegerType, true),
-  DataTypes.createStructField("src_ts3", DataTypes.StringType, true),
-  DataTypes.createStructField("src_ts4", DataTypes.StringType, true),
-  DataTypes.createStructField("src_ts5", DataTypes.StringType, true),
-  DataTypes.createStructField("src_ts6", DataTypes.StringType, true),
-  DataTypes.createStructField("src_ts7", DataTypes.StringType, true),
-  DataTypes.createStructField("src_ts8", DataTypes.StringType, true),
-  DataTypes.createStructField("src_ts9", DataTypes.StringType, true),
-  DataTypes.createStructField("src_ts10", DataTypes.FloatType, true),
-  DataTypes.createStructField("src_ts11", DataTypes.FloatType, true),
-  DataTypes.createStructField("src_ts12", DataTypes.DoubleType, true),
-  DataTypes.createStructField("src_ts13", DataTypes.StringType, true),
-  DataTypes.createStructField("src_ts14", DataTypes.StringType, true),
-  DataTypes.createStructField("src_ts15", DataTypes.StringType, true),
-  DataTypes.createStructField("src_ts16", DataTypes.StringType, true),
-  DataTypes.createStructField("src_ts17", DataTypes.DateType, true),
-  DataTypes.createStructField("src_ts18", DataTypes.StringType, true),
-  DataTypes.createStructField("src_ts19", DataTypes.StringType, true),
-  DataTypes.createStructField("src_ts20", DataTypes.StringType, true),
-  DataTypes.createStructField("src_ts21", DataTypes.StringType, true)
-))
-
-val rows = Seq(
-  RowFactory.create(Date.valueOf("2026-01-15"), Int.box(120), "12345.678901234567", "2026-05-06 12:34:56.123456", "2026-05-06T12:34:56.123456789", "2026-05-06T12:34:56.123456+03:00", "999.99", "23:59:59.987654321", "9223372036854775806", Float.box(12.3456f), Float.box(7.5f), Double.box(456.789012d), "2026-05-06T12:34:56.123456+05:00", "2026-05-06T12:34:56+03:00", "2026-05-06T12:34:56+03:00[Europe/Moscow]", "2026-05-06T09:34:56Z[UTC]", Date.valueOf("2024-02-29"), "01:02:03.123456", "com.demo.Type:value42", "[{\"key\":\"k1\",\"type\":\"TypeA\"},{\"key\":\"k2\",\"type\":\"TypeB\"}]", "[[\"123\",\"12345\",null],[\"abc\",\"999\",\"x\"]]"),
-  RowFactory.create(Date.valueOf("0001-01-01"), Int.box(1), "1.000000000001", "0001-01-01 00:00:00.000000", "0001-01-01T00:00:00.000000000", "0001-01-01T00:00:00.000000+00:00", "1.00", "00:00:00.000000000", "1", Float.box(1.0f), Float.box(1.0f), Double.box(1.0d), "0001-01-01T00:00:00+00:00", "0001-01-01T00:00:00+00:00", "0001-01-01T00:00:00+00:00[UTC]", "0001-01-01T00:00:00Z[UTC]", Date.valueOf("0001-01-01"), "00:00:00.000000000", "case.boundary:min", "[]", "[[\"min\",\"1\",null]]"),
-  RowFactory.create(Date.valueOf("9999-12-31"), Int.box(2), "2.000000000002", "9999-12-31 23:59:59.999999", "9999-12-31T23:59:59.999999999", "9999-12-31T23:59:59.999999+00:00", "2.00", "23:59:59.999999999", "2", Float.box(2.0f), Float.box(2.0f), Double.box(2.0d), "9999-12-31T23:59:59.999999+00:00", "9999-12-31T23:59:59+00:00", "9999-12-31T23:59:59+00:00[UTC]", "9999-12-31T23:59:59Z[UTC]", Date.valueOf("9999-12-31"), "23:59:59.999999999", "case.boundary:max", "[]", "[[\"max\",\"2\",null]]"),
-  RowFactory.create(Date.valueOf("2026-01-01"), Int.box(3), "3.000000000003", "2026-01-01 00:00:00.000000", "0000-01-01T00:00:00.000000000", "-0001-12-31T23:59:59.000000+00:00", "3.00", "25:61:61.000000000", "3", Float.box(3.0f), Float.box(3.0f), Double.box(3.0d), "10000-01-01T00:00:00+00:00", "0000-01-01T00:00:00+00:00", "-0001-12-31T23:59:59+00:00[UTC]", "10000-01-01T00:00:00Z[UTC]", Date.valueOf("2026-01-01"), "99:99:99.999999999", "case.outofrange:strings", "[]", "[[\"oor\",\"3\",null]]"),
-  RowFactory.create(Date.valueOf("0001-01-01"), Int.box(-32768), "-0.000000000001", "1970-01-01 00:00:00.000001", "1999-12-31T23:59:59.999999999", "2026-05-06T12:34:56.999999+00:00", "-9999999999999.99", "00:00:00.000000001", "-9223372036854775808", Float.box(-1.25f), Float.box(0.0f), Double.box(-1.0d), "2026-05-06T12:34:56.000000Z", "2026-05-06T12:34:56Z", "2026-05-06T12:34:56Z[UTC]", "2026-05-06T12:34:56-07:00[America/Los_Angeles]", Date.valueOf("9999-12-31"), "23:59:59.999999999", "my.type.Name:value.with.dots", "[]", "[[\"123\",null,\"x\"]]"),
-  RowFactory.create(null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null)
+case class SourceRecord(
+  case_id: String,
+  src_ts1: Date,
+  src_ts2: java.lang.Integer,
+  src_ts3: String,
+  src_ts4: String,
+  src_ts5: String,
+  src_ts6: String,
+  src_ts7: String,
+  src_ts8: String,
+  src_ts9: String,
+  src_ts10: java.lang.Float,
+  src_ts11: java.lang.Float,
+  src_ts12: java.lang.Double,
+  src_ts13: String,
+  src_ts14: String,
+  src_ts15: String,
+  src_ts16: String,
+  src_ts17: Date,
+  src_ts18: String,
+  src_ts19: String,
+  src_ts20: String,
+  src_ts21: String
 )
 
-val sourceDf = spark.createDataFrame(spark.sparkContext.parallelize(rows), schema)
-sourceDf.write.mode("errorifexists").parquet(parquetPath)
+val base = SourceRecord(
+  case_id = "baseline_valid",
+  src_ts1 = Date.valueOf("2024-05-20"),
+  src_ts2 = Int.box(123),
+  src_ts3 = "12345.678901234567",
+  src_ts4 = "2024-05-20T10:15:30.123456789",
+  src_ts5 = "2024-05-20T10:15:30.123456789",
+  src_ts6 = "2026-04-13T13:42:43.271025800+03:00[Europe/Moscow]",
+  src_ts7 = "999.99",
+  src_ts8 = "23:59:59.98765432",
+  src_ts9 = "9223372036854775806",
+  src_ts10 = Float.box(12.3456f),
+  src_ts11 = Float.box(7.5f),
+  src_ts12 = Double.box(456.789012d),
+  src_ts13 = "2024-05-20T10:15:30.123456789+03:00",
+  src_ts14 = "2024-05-20T13:15:30.123456789+03:00",
+  src_ts15 = "2024-05-20T13:15:30.123456789+03:00[Europe/Moscow]",
+  src_ts16 = "2024-05-20T13:00:00.123456789+03:00[Europe/Moscow]",
+  src_ts17 = Date.valueOf("2024-05-20"),
+  src_ts18 = "13:42:43.123456789",
+  src_ts19 = "part.one.text:part.two.text",
+  src_ts20 = "[{\"key\":\"k1\",\"type\":\"TypeA\"}]",
+  src_ts21 = "[\"123\",\"12345\",null]"
+)
+
+val sourceRows = Seq(
+  base,
+  base.copy(case_id = "datetime_min_boundary", src_ts1 = Date.valueOf("0001-01-01"), src_ts4 = "0001-01-01T00:00:00.000000000", src_ts5 = "0001-01-01T00:00:00.000000000", src_ts13 = "0001-01-01T00:00:00.000000000+00:00", src_ts14 = "0001-01-01T00:00:00.000000000+00:00", src_ts15 = "0001-01-01T00:00:00.000000000Z[UTC]", src_ts16 = "0001-01-01T00:00:00.000000000Z[UTC]", src_ts17 = Date.valueOf("0001-01-01")),
+  base.copy(case_id = "datetime_max_boundary", src_ts1 = Date.valueOf("9999-12-31"), src_ts4 = "9999-12-31T23:59:59.999999999", src_ts5 = "9999-12-31T23:59:59.999999999", src_ts13 = "9999-12-31T23:59:59.999999999+00:00", src_ts14 = "9999-12-31T23:59:59.999999999+00:00", src_ts15 = "9999-12-31T23:59:59.999999999Z[UTC]", src_ts16 = "9999-12-31T23:59:59.999999999Z[UTC]", src_ts17 = Date.valueOf("9999-12-31")),
+  base.copy(case_id = "datetime_string_out_of_range", src_ts5 = "0000-01-01T00:00:00.000000000", src_ts13 = "10000-01-01T00:00:00.000000000+00:00", src_ts14 = "0000-01-01T00:00:00.000000000+00:00", src_ts15 = "-0001-12-31T23:59:59.000000000+00:00[UTC]", src_ts16 = "10000-01-01T00:00:00.000000000Z[UTC]"),
+  base.copy(case_id = "ts4_invalid_format", src_ts4 = "2024-05-20 10:15:30.123456789"),
+  base.copy(case_id = "ts5_invalid_nano_length", src_ts5 = "2024-05-20T10:15:30.123"),
+  base.copy(case_id = "ts6_offset_0530", src_ts6 = "2026-04-13T13:42:43.271025800+05:30"),
+  base.copy(case_id = "ts6_offset_0300_textzone", src_ts6 = "2026-04-13T13:42:43.271025800+03:00Europe/Moscow"),
+  base.copy(case_id = "ts6_invalid_short_fraction", src_ts6 = "2026-04-13T13:42:43.271025+03:00"),
+  base.copy(case_id = "ts9_overflow", src_ts9 = "9223372036854775808"),
+  base.copy(case_id = "ts10_nan", src_ts10 = Float.box(Float.NaN)),
+  base.copy(case_id = "ts12_positive_infinity", src_ts12 = Double.box(Double.PositiveInfinity)),
+  base.copy(case_id = "ts13_invalid_no_offset", src_ts13 = "2024-05-20T10:15:30.123456789"),
+  base.copy(case_id = "ts14_day_shift_forward", src_ts14 = "2024-05-20T23:00:00.000000000-05:00"),
+  base.copy(case_id = "ts15_offset_zone_mismatch", src_ts15 = "2024-05-20T10:15:30.123456789+05:00[Europe/Moscow]"),
+  base.copy(case_id = "ts15_without_brackets", src_ts15 = "2024-05-20T10:15:30.123456789+03:00Europe/Moscow"),
+  base.copy(case_id = "ts16_india", src_ts16 = "2024-05-20T15:30:00.123456789+05:30[Asia/Kolkata]"),
+  base.copy(case_id = "ts18_midnight", src_ts18 = "00:00:00.000000000"),
+  base.copy(case_id = "ts18_invalid_hour", src_ts18 = "25:00:00.000000000"),
+  base.copy(case_id = "ts19_without_colon", src_ts19 = "part.one.no.colon"),
+  base.copy(case_id = "ts20_empty_array", src_ts20 = "[]"),
+  base.copy(case_id = "ts20_invalid_json", src_ts20 = "[{\"key\":\"k1\""),
+  base.copy(case_id = "ts21_empty_array", src_ts21 = "[]"),
+  base.copy(case_id = "ts21_only_nulls", src_ts21 = "[null,null]"),
+  base.copy(case_id = "nulls_all", src_ts1 = null, src_ts2 = null, src_ts3 = null, src_ts4 = null, src_ts5 = null, src_ts6 = null, src_ts7 = null, src_ts8 = null, src_ts9 = null, src_ts10 = null, src_ts11 = null, src_ts12 = null, src_ts13 = null, src_ts14 = null, src_ts15 = null, src_ts16 = null, src_ts17 = null, src_ts18 = null, src_ts19 = null, src_ts20 = null, src_ts21 = null)
+)
+
+val sourceDf = spark.createDataset(sourceRows).toDF()
+sourceDf.write.mode("overwrite").parquet(parquetPath)
 
 spark.sql("CREATE DATABASE IF NOT EXISTS transform_demo")
 spark.sql("DROP TABLE IF EXISTS transform_demo.source_input")
 spark.sql(s"""
   CREATE TABLE transform_demo.source_input (
+    case_id STRING,
     src_ts1 DATE,
     src_ts2 INT,
     src_ts3 STRING,
@@ -82,84 +125,191 @@ spark.sql("DROP VIEW IF EXISTS transform_demo.transformed_view")
 spark.sql("""
   CREATE VIEW transform_demo.transformed_view AS
   SELECT
+    case_id,
     CAST(src_ts1 AS TIMESTAMP) AS ts1,
     CAST(src_ts2 AS SMALLINT) AS ts2,
     CAST(src_ts3 AS DECIMAL(38,12)) AS ts3,
-    TO_TIMESTAMP(src_ts4, 'yyyy-MM-dd HH:mm:ss.SSSSSS') AS ts4,
-    SUBSTR(REGEXP_REPLACE(src_ts5, 'T', ' '), 1, 26) AS ts5,
-    REGEXP_REPLACE(SUBSTR(REGEXP_REPLACE(src_ts6, 'T', ' '), 1, 29), '([+-][0-9]{2}):00$', '$1') AS ts6,
+
+    -- TS4: strict yyyy-MM-ddTHH:mm:ss.SSSSSSSSS -> timestamp (microseconds)
+    CASE
+      WHEN src_ts4 IS NULL OR TRIM(src_ts4) = '' THEN NULL
+      WHEN TRIM(src_ts4) RLIKE '^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{9}$'
+        THEN TO_TIMESTAMP(SUBSTR(TRIM(src_ts4), 1, 26), 'yyyy-MM-dd\'T\'HH:mm:ss.SSSSSS')
+      ELSE NULL
+    END AS ts4,
+
+    -- TS5: strict yyyy-MM-ddTHH:mm:ss.SSSSSSSSS -> yyyy-MM-dd HH:mm:ss.SSSSSS
+    CASE
+      WHEN src_ts5 IS NULL OR TRIM(src_ts5) = '' THEN NULL
+      WHEN TRIM(src_ts5) RLIKE '^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{9}$'
+           AND TO_TIMESTAMP(CONCAT(SUBSTR(TRIM(src_ts5),1,10), ' ', SUBSTR(TRIM(src_ts5),12,8)), 'yyyy-MM-dd HH:mm:ss') IS NOT NULL
+        THEN CONCAT(SUBSTR(TRIM(src_ts5), 1, 10), ' ', SUBSTR(TRIM(src_ts5), 12, 8), '.', SUBSTR(TRIM(src_ts5), 21, 6))
+      ELSE NULL
+    END AS ts5,
+
+    -- TS6
+    CASE
+      WHEN src_ts6 IS NULL OR TRIM(src_ts6) = '' THEN NULL
+      WHEN TRIM(src_ts6) RLIKE '^[0-9]{4}-[0-9]{2}-[0-9]{2}[T ][0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{9}.*$'
+        THEN CONCAT(
+          REGEXP_REPLACE(REGEXP_EXTRACT(TRIM(src_ts6), '^(\\d{4}-\\d{2}-\\d{2}[T ]\\d{2}:\\d{2}:\\d{2})', 1), 'T', ' '),
+          '.',
+          SUBSTR(REGEXP_EXTRACT(TRIM(src_ts6), '^[0-9]{4}-[0-9]{2}-[0-9]{2}[T ][0-9]{2}:[0-9]{2}:[0-9]{2}\\.([0-9]{9})', 1), 1, 6),
+          REGEXP_REPLACE(
+            REGEXP_REPLACE(
+              REGEXP_REPLACE(
+                CASE
+                  WHEN REGEXP_EXTRACT(TRIM(src_ts6), '(Z|[+-]\\d{2}:?\\d{2})', 1) = ''
+                    THEN CASE WHEN TRIM(src_ts6) LIKE '%Europe/Moscow%' THEN '+03' ELSE '+00' END
+                  ELSE REGEXP_REPLACE(REGEXP_EXTRACT(TRIM(src_ts6), '(Z|[+-]\\d{2}:?\\d{2})', 1), '^Z$', '+00')
+                END,
+                '^([+-]\\d{2})(\\d{2})$', '$1:$2'
+              ),
+              '^([+-]\\d{2}):00$', '$1'
+            ),
+            '^([+-]\\d{2})00$', '$1'
+          )
+        )
+      ELSE NULL
+    END AS ts6,
+
     CAST(src_ts7 AS DECIMAL(19,2)) AS ts7,
-    SUBSTR(REGEXP_EXTRACT(src_ts8, '[0-9]{2}:[0-9]{2}:[0-9]{2}(\\\\.[0-9]+)?', 0), 1, 15) AS ts8,
+
+    -- TS8: HH:mm:ss.SSSSSSSS -> HH:mm:ss.SSSSSS
+    CASE
+      WHEN src_ts8 IS NULL OR TRIM(src_ts8) = '' THEN NULL
+      WHEN TRIM(src_ts8) RLIKE '^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]\.[0-9]{8}$'
+        THEN DATE_FORMAT(TO_TIMESTAMP(TRIM(src_ts8), 'HH:mm:ss.SSSSSSSS'), 'HH:mm:ss.SSSSSS')
+      ELSE NULL
+    END AS ts8,
+
     CAST(src_ts9 AS BIGINT) AS ts9,
-    CAST(src_ts10 AS DECIMAL(38,12)) AS ts10,
+
+    -- TS10/TS12: cast keeps null for NaN/Infinity in Spark SQL
+    CAST(CAST(src_ts10 AS STRING) AS DECIMAL(38,12)) AS ts10,
     CAST(src_ts11 AS DOUBLE) AS ts11,
     CAST(src_ts12 AS DECIMAL(38,12)) AS ts12,
-    REGEXP_REPLACE(REGEXP_REPLACE(src_ts13, 'T', ' '), '(Z|[+-][0-9]{2}:[0-9]{2})$', '') AS ts13,
 
-    DATE_FORMAT(
-      TO_UTC_TIMESTAMP(
-        SUBSTR(REGEXP_REPLACE(REGEXP_REPLACE(src_ts14, 'Z$', '+00:00'), 'T', ' '), 1, 19),
-        COALESCE(
-          NULLIF(REGEXP_EXTRACT(REGEXP_REPLACE(src_ts14, 'Z$', '+00:00'), '([+-][0-9]{2}:[0-9]{2})$', 1), ''),
-          'UTC'
+    -- TS13: strict offset datetime to local string micros
+    CASE
+      WHEN src_ts13 IS NULL OR TRIM(src_ts13) = '' THEN NULL
+      WHEN TRIM(src_ts13) RLIKE '^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{9}(Z|[+-][0-9]{2}:?[0-9]{2})$'
+           AND TO_TIMESTAMP(CONCAT(SUBSTR(TRIM(src_ts13),1,10), ' ', SUBSTR(TRIM(src_ts13),12,8)), 'yyyy-MM-dd HH:mm:ss') IS NOT NULL
+        THEN CONCAT(SUBSTR(TRIM(src_ts13),1,10), ' ', SUBSTR(TRIM(src_ts13),12,8), '.', SUBSTR(TRIM(src_ts13),21,6))
+      ELSE NULL
+    END AS ts13,
+
+    -- TS14: strict offset datetime to UTC string micros
+    CASE
+      WHEN src_ts14 IS NULL OR TRIM(src_ts14) = '' THEN NULL
+      WHEN TRIM(src_ts14) RLIKE '^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{9}(Z|[+-][0-9]{2}:?[0-9]{2})$'
+           AND TO_TIMESTAMP(CONCAT(SUBSTR(TRIM(src_ts14),1,10), ' ', SUBSTR(TRIM(src_ts14),12,8), '.', SUBSTR(TRIM(src_ts14),21,6)), 'yyyy-MM-dd HH:mm:ss.SSSSSS') IS NOT NULL
+        THEN DATE_FORMAT(
+          TO_UTC_TIMESTAMP(
+            TO_TIMESTAMP(CONCAT(SUBSTR(TRIM(src_ts14),1,10), ' ', SUBSTR(TRIM(src_ts14),12,8), '.', SUBSTR(TRIM(src_ts14),21,6)), 'yyyy-MM-dd HH:mm:ss.SSSSSS'),
+            CASE
+              WHEN REGEXP_EXTRACT(TRIM(src_ts14), '(Z|[+-][0-9]{2}:?[0-9]{2})$', 1) = 'Z' THEN '+00:00'
+              WHEN REGEXP_EXTRACT(TRIM(src_ts14), '(Z|[+-][0-9]{2}:?[0-9]{2})$', 1) RLIKE '^[+-][0-9]{4}$'
+                THEN REGEXP_REPLACE(REGEXP_EXTRACT(TRIM(src_ts14), '(Z|[+-][0-9]{2}:?[0-9]{2})$', 1), '^([+-][0-9]{2})([0-9]{2})$', '$1:$2')
+              ELSE REGEXP_EXTRACT(TRIM(src_ts14), '(Z|[+-][0-9]{2}:?[0-9]{2})$', 1)
+            END
+          ),
+          'yyyy-MM-dd HH:mm:ss.SSSSSS'
         )
-      ),
-      'yyyy-MM-dd HH:mm:ss'
-    ) AS ts14,
+      ELSE NULL
+    END AS ts14,
 
-    REGEXP_REPLACE(
-      REGEXP_REPLACE(
-        REGEXP_REPLACE(src_ts15, '\\\\[.*\\\\]$', ''),
-        'T',
-        ' '
-      ),
-      '(Z|[+-][0-9]{2}:[0-9]{2})$',
-      ''
-    ) AS ts15,
-
-    DATE_FORMAT(
-      TO_UTC_TIMESTAMP(
-        SUBSTR(REGEXP_REPLACE(src_ts16, 'T', ' '), 1, 19),
-        COALESCE(
-          NULLIF(REGEXP_EXTRACT(src_ts16, '\\[([^\\]]+)\\]$', 1), ''),
-          NULLIF(REGEXP_EXTRACT(REGEXP_REPLACE(src_ts16, 'Z$', '+00:00'), '([+-][0-9]{2}:[0-9]{2})$', 1), ''),
-          'UTC'
+    -- TS15: zoned datetime as-is zone, formatted with micros
+    CASE
+      WHEN src_ts15 IS NULL OR TRIM(src_ts15) = '' THEN NULL
+      WHEN TRIM(src_ts15) RLIKE '^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{9}Z$'
+        THEN CONCAT(SUBSTR(TRIM(src_ts15),1,10), ' ', SUBSTR(TRIM(src_ts15),12,8), '.', SUBSTR(TRIM(src_ts15),21,6))
+      WHEN TRIM(src_ts15) LIKE '%[%' AND TRIM(src_ts15) LIKE '%]%'
+        THEN DATE_FORMAT(
+          FROM_UTC_TIMESTAMP(
+            TO_UTC_TIMESTAMP(
+              TO_TIMESTAMP(CONCAT(SUBSTR(TRIM(src_ts15),1,10), ' ', SUBSTR(TRIM(src_ts15),12,8), '.', SUBSTR(TRIM(src_ts15),21,6)), 'yyyy-MM-dd HH:mm:ss.SSSSSS'),
+              CASE
+                WHEN REGEXP_EXTRACT(TRIM(src_ts15), '(Z|[+-][0-9]{2}:[0-9]{2})', 1) = 'Z' THEN '+00:00'
+                ELSE REGEXP_EXTRACT(TRIM(src_ts15), '(Z|[+-][0-9]{2}:[0-9]{2})', 1)
+              END
+            ),
+            REGEXP_EXTRACT(TRIM(src_ts15), '\\[(.+)\\]$', 1)
+          ),
+          'yyyy-MM-dd HH:mm:ss.SSSSSS'
         )
-      ),
-      'yyyy-MM-dd HH:mm:ss'
-    ) AS ts16,
+      ELSE NULL
+    END AS ts15,
+
+    -- TS16: zoned datetime to UTC with micros
+    CASE
+      WHEN src_ts16 IS NULL OR TRIM(src_ts16) = '' THEN NULL
+      WHEN TRIM(src_ts16) LIKE '%[%' AND TRIM(src_ts16) LIKE '%]%'
+        THEN DATE_FORMAT(
+          TO_UTC_TIMESTAMP(
+            TO_TIMESTAMP(CONCAT(SUBSTR(TRIM(src_ts16),1,10), ' ', SUBSTR(TRIM(src_ts16),12,8), '.', SUBSTR(TRIM(src_ts16),21,6)), 'yyyy-MM-dd HH:mm:ss.SSSSSS'),
+            CASE
+              WHEN REGEXP_EXTRACT(TRIM(src_ts16), '(Z|[+-][0-9]{2}:[0-9]{2})', 1) = 'Z' THEN '+00:00'
+              ELSE REGEXP_EXTRACT(TRIM(src_ts16), '(Z|[+-][0-9]{2}:[0-9]{2})', 1)
+            END
+          ),
+          'yyyy-MM-dd HH:mm:ss.SSSSSS'
+        )
+      ELSE NULL
+    END AS ts16,
 
     CONCAT(CAST(src_ts17 AS STRING), ' 00:00:00.000000') AS ts17,
-    SUBSTR(REGEXP_EXTRACT(src_ts18, '[0-9]{2}:[0-9]{2}:[0-9]{2}(\\\\.[0-9]+)?', 0), 1, 15) AS ts18,
-    CONCAT(REGEXP_REPLACE(SPLIT(src_ts19, ':')[0], '\\\\.', '_'), ':', SPLIT(src_ts19, ':')[1]) AS ts19,
 
-    CONCAT_WS(
-      ';',
-      TRANSFORM(
-        FROM_JSON(src_ts20, 'array<struct<key:string,type:string>>'),
-        x -> CONCAT(
-          COALESCE(x.key, ''),
-          ':',
-          COALESCE(x.type, ''),
-          ':',
-          CAST(CAST(UNIX_TIMESTAMP(CURRENT_TIMESTAMP()) AS BIGINT) * 1000 AS STRING),
-          ':I'
+    -- TS18: LocalTime.toString()-like output
+    CASE
+      WHEN src_ts18 IS NULL OR TRIM(src_ts18) = '' THEN NULL
+      WHEN TRIM(src_ts18) RLIKE '^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]\.[0-9]{9}$' THEN
+        CASE
+          WHEN SUBSTR(TRIM(src_ts18), 10, 9) = '000000000' AND SUBSTR(TRIM(src_ts18), 1, 8) = '00:00:00' THEN '00:00'
+          WHEN SUBSTR(TRIM(src_ts18), 10, 9) = '000000000' THEN SUBSTR(TRIM(src_ts18), 1, 8)
+          ELSE CONCAT(SUBSTR(TRIM(src_ts18), 1, 8), '.', REGEXP_REPLACE(SUBSTR(TRIM(src_ts18), 10, 9), '0+$', ''))
+        END
+      ELSE NULL
+    END AS ts18,
+
+    -- TS19
+    CASE
+      WHEN src_ts19 IS NULL THEN NULL
+      WHEN TRIM(src_ts19) = '' THEN ''
+      WHEN LENGTH(src_ts19) - LENGTH(REGEXP_REPLACE(src_ts19, ':', '')) = 1
+        THEN CONCAT(REGEXP_REPLACE(SPLIT(src_ts19, ':')[0], '\\.', ' '), ':', SPLIT(src_ts19, ':')[1])
+      ELSE NULL
+    END AS ts19,
+
+    -- TS20
+    CASE
+      WHEN src_ts20 IS NULL THEN NULL
+      WHEN TRIM(src_ts20) = '' THEN ''
+      WHEN FROM_JSON(src_ts20, 'array<struct<key:string,type:string>>') IS NULL THEN NULL
+      ELSE CONCAT_WS(
+        ';',
+        TRANSFORM(
+          FROM_JSON(src_ts20, 'array<struct<key:string,type:string>>'),
+          x -> CASE
+            WHEN COALESCE(x.type, '') <> ''
+              THEN CONCAT(COALESCE(x.key, ''), ':', x.type, '|', CAST(CAST(UNIX_TIMESTAMP(CURRENT_TIMESTAMP()) AS BIGINT) * 1000 AS STRING), ':I')
+            ELSE CONCAT(COALESCE(x.key, ''), ':', CAST(CAST(UNIX_TIMESTAMP(CURRENT_TIMESTAMP()) AS BIGINT) * 1000 AS STRING), ':I')
+          END
         )
       )
-    ) AS ts20,
+    END AS ts20,
 
-    CONCAT_WS(
-      ';',
-      TRANSFORM(
-        FROM_JSON(src_ts21, 'array<array<string>>'),
-        a -> CONCAT_WS('|', TRANSFORM(a, e -> COALESCE(e, 'null')))
-      )
-    ) AS ts21
-
+    -- TS21
+    CASE
+      WHEN src_ts21 IS NULL THEN NULL
+      WHEN FROM_JSON(src_ts21, 'array<string>') IS NULL THEN NULL
+      ELSE CONCAT_WS('|', TRANSFORM(FROM_JSON(src_ts21, 'array<string>'), x -> COALESCE(x, 'null')))
+    END AS ts21
   FROM transform_demo.source_input
 """)
 
 case class TargetRecord(
+  case_id: String,
   ts1: java.sql.Timestamp,
   ts2: java.lang.Short,
   ts3: BigDecimal,
@@ -184,9 +334,10 @@ case class TargetRecord(
 )
 
 val typedDs = spark.sql("""
-  SELECT ts1, ts2, ts3, ts4, ts5, ts6, ts7, ts8, ts9, ts10,
+  SELECT case_id, ts1, ts2, ts3, ts4, ts5, ts6, ts7, ts8, ts9, ts10,
          ts11, ts12, ts13, ts14, ts15, ts16, ts17, ts18, ts19, ts20, ts21
   FROM transform_demo.transformed_view
+  ORDER BY case_id
 """).as[TargetRecord]
 
 typedDs.show(false)

@@ -13,3 +13,6 @@ services:
       - ./target/data/parquet/input:/data/parquet/input
       - ./target/spark-warehouse:/workspace/spark-warehouse
     command: ["bash", "-lc", "sleep infinity"]
+
+
+# hive 3.1.2

@@ -4,6 +4,7 @@ spark.sparkContext.setLogLevel("WARN")
 spark.sql("USE transform_demo")
 
 case class TargetRecord(
+  case_id: String,
   ts1: java.sql.Timestamp,
   ts2: java.lang.Short,
   ts3: BigDecimal,
@@ -29,9 +30,10 @@ case class TargetRecord(
 
 println("Reading transformed_view as typed dataset")
 val targetDs = spark.sql("""
-  SELECT ts1, ts2, ts3, ts4, ts5, ts6, ts7, ts8, ts9, ts10,
+  SELECT case_id, ts1, ts2, ts3, ts4, ts5, ts6, ts7, ts8, ts9, ts10,
          ts11, ts12, ts13, ts14, ts15, ts16, ts17, ts18, ts19, ts20, ts21
   FROM transformed_view
+  ORDER BY case_id
 """).as[TargetRecord]
 
 targetDs.show(false)
