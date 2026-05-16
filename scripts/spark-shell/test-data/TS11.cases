@@ -1,0 +1,14 @@
+int_123|123.0
+big_int|12345678.0
+negative_int|-100000.0
+fraction|0.12345
+zero|0.0
+minus_zero|-0.0
+exp_pos|1.111111E10
+exp_neg|1.23E-4
+pure_exp|1.25E6
+float_min|1.4E-45
+nan|<NaN>
+pos_inf|<POS_INF>
+neg_inf|<NEG_INF>
+null|<NULL>

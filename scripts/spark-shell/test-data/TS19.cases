@@ -1,0 +1,11 @@
+replace_success|part.one.text:part.two.text
+no_dot_left|partone:part.two
+dot_right_kept|a.b:c.d
+empty_left|:part2
+empty_right|part1.:
+null|<NULL>
+empty|<EMPTY>
+no_colon|part.one.no.colon
+two_colons|part.one:part.two:part.three
+many_colons|:::
+

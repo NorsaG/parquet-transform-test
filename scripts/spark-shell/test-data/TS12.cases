@@ -1,0 +1,15 @@
+int_pos|100.0
+int_neg|-500.0
+big_int|123456789012.0
+fraction_12|1.123456789012
+fraction_round|0.123456789012345
+exp_pos|1.111111E10
+exp_neg|1.23E-4
+exp_big|1.0E20
+zero|0.0
+minus_zero|-0.0
+null|<NULL>
+nan|<NaN>
+pos_inf|<POS_INF>
+neg_inf|<NEG_INF>
+

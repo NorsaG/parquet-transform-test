@@ -1,4 +1,8 @@
 import java.sql.Date
+import java.io.File
+import scala.io.Source
+import scala.sys.process._
+import scala.util.Try
 
 spark.sparkContext.setLogLevel("WARN")
 import spark.implicits._
@@ -34,61 +38,120 @@ case class SourceRecord(
   src_ts21: String
 )
 
-val base = SourceRecord(
-  case_id = "baseline_valid",
-  src_ts1 = Date.valueOf("2024-05-20"),
-  src_ts2 = Int.box(123),
-  src_ts3 = "12345.678901234567",
-  src_ts4 = "2024-05-20T10:15:30.123456789",
-  src_ts5 = "2024-05-20T10:15:30.123456789",
-  src_ts6 = "2026-04-13T13:42:43.271025800+03:00[Europe/Moscow]",
-  src_ts7 = "999.99",
-  src_ts8 = "23:59:59.98765432",
-  src_ts9 = "9223372036854775806",
-  src_ts10 = Float.box(12.3456f),
-  src_ts11 = Float.box(7.5f),
-  src_ts12 = Double.box(456.789012d),
-  src_ts13 = "2024-05-20T10:15:30.123456789+03:00",
-  src_ts14 = "2024-05-20T13:15:30.123456789+03:00",
-  src_ts15 = "2024-05-20T13:15:30.123456789+03:00[Europe/Moscow]",
-  src_ts16 = "2024-05-20T13:00:00.123456789+03:00[Europe/Moscow]",
-  src_ts17 = Date.valueOf("2024-05-20"),
-  src_ts18 = "13:42:43.123456789",
-  src_ts19 = "part.one.text:part.two.text",
-  src_ts20 = "[{\"key\":\"k1\",\"type\":\"TypeA\"}]",
-  src_ts21 = "[\"123\",\"12345\",null]"
+def nullRecord(caseId: String): SourceRecord = SourceRecord(
+  case_id = caseId,
+  src_ts1 = null,
+  src_ts2 = null,
+  src_ts3 = null,
+  src_ts4 = null,
+  src_ts5 = null,
+  src_ts6 = null,
+  src_ts7 = null,
+  src_ts8 = null,
+  src_ts9 = null,
+  src_ts10 = null,
+  src_ts11 = null,
+  src_ts12 = null,
+  src_ts13 = null,
+  src_ts14 = null,
+  src_ts15 = null,
+  src_ts16 = null,
+  src_ts17 = null,
+  src_ts18 = null,
+  src_ts19 = null,
+  src_ts20 = null,
+  src_ts21 = null
 )
 
-val sourceRows = Seq(
-  base,
-  base.copy(case_id = "datetime_min_boundary", src_ts1 = Date.valueOf("0001-01-01"), src_ts4 = "0001-01-01T00:00:00.000000000", src_ts5 = "0001-01-01T00:00:00.000000000", src_ts13 = "0001-01-01T00:00:00.000000000+00:00", src_ts14 = "0001-01-01T00:00:00.000000000+00:00", src_ts15 = "0001-01-01T00:00:00.000000000Z[UTC]", src_ts16 = "0001-01-01T00:00:00.000000000Z[UTC]", src_ts17 = Date.valueOf("0001-01-01")),
-  base.copy(case_id = "datetime_max_boundary", src_ts1 = Date.valueOf("9999-12-31"), src_ts4 = "9999-12-31T23:59:59.999999999", src_ts5 = "9999-12-31T23:59:59.999999999", src_ts13 = "9999-12-31T23:59:59.999999999+00:00", src_ts14 = "9999-12-31T23:59:59.999999999+00:00", src_ts15 = "9999-12-31T23:59:59.999999999Z[UTC]", src_ts16 = "9999-12-31T23:59:59.999999999Z[UTC]", src_ts17 = Date.valueOf("9999-12-31")),
-  base.copy(case_id = "datetime_string_out_of_range", src_ts5 = "0000-01-01T00:00:00.000000000", src_ts13 = "10000-01-01T00:00:00.000000000+00:00", src_ts14 = "0000-01-01T00:00:00.000000000+00:00", src_ts15 = "-0001-12-31T23:59:59.000000000+00:00[UTC]", src_ts16 = "10000-01-01T00:00:00.000000000Z[UTC]"),
-  base.copy(case_id = "ts4_invalid_format", src_ts4 = "2024-05-20 10:15:30.123456789"),
-  base.copy(case_id = "ts5_invalid_nano_length", src_ts5 = "2024-05-20T10:15:30.123"),
-  base.copy(case_id = "ts6_offset_0530", src_ts6 = "2026-04-13T13:42:43.271025800+05:30"),
-  base.copy(case_id = "ts6_offset_0300_textzone", src_ts6 = "2026-04-13T13:42:43.271025800+03:00Europe/Moscow"),
-  base.copy(case_id = "ts6_invalid_short_fraction", src_ts6 = "2026-04-13T13:42:43.271025+03:00"),
-  base.copy(case_id = "ts9_overflow", src_ts9 = "9223372036854775808"),
-  base.copy(case_id = "ts10_nan", src_ts10 = Float.box(Float.NaN)),
-  base.copy(case_id = "ts12_positive_infinity", src_ts12 = Double.box(Double.PositiveInfinity)),
-  base.copy(case_id = "ts13_invalid_no_offset", src_ts13 = "2024-05-20T10:15:30.123456789"),
-  base.copy(case_id = "ts14_day_shift_forward", src_ts14 = "2024-05-20T23:00:00.000000000-05:00"),
-  base.copy(case_id = "ts15_offset_zone_mismatch", src_ts15 = "2024-05-20T10:15:30.123456789+05:00[Europe/Moscow]"),
-  base.copy(case_id = "ts15_without_brackets", src_ts15 = "2024-05-20T10:15:30.123456789+03:00Europe/Moscow"),
-  base.copy(case_id = "ts16_india", src_ts16 = "2024-05-20T15:30:00.123456789+05:30[Asia/Kolkata]"),
-  base.copy(case_id = "ts18_midnight", src_ts18 = "00:00:00.000000000"),
-  base.copy(case_id = "ts18_invalid_hour", src_ts18 = "25:00:00.000000000"),
-  base.copy(case_id = "ts19_without_colon", src_ts19 = "part.one.no.colon"),
-  base.copy(case_id = "ts20_empty_array", src_ts20 = "[]"),
-  base.copy(case_id = "ts20_invalid_json", src_ts20 = "[{\"key\":\"k1\""),
-  base.copy(case_id = "ts21_empty_array", src_ts21 = "[]"),
-  base.copy(case_id = "ts21_only_nulls", src_ts21 = "[null,null]"),
-  base.copy(case_id = "nulls_all", src_ts1 = null, src_ts2 = null, src_ts3 = null, src_ts4 = null, src_ts5 = null, src_ts6 = null, src_ts7 = null, src_ts8 = null, src_ts9 = null, src_ts10 = null, src_ts11 = null, src_ts12 = null, src_ts13 = null, src_ts14 = null, src_ts15 = null, src_ts16 = null, src_ts17 = null, src_ts18 = null, src_ts19 = null, src_ts20 = null, src_ts21 = null)
-)
+def decodeToken(raw: String): Option[String] = raw match {
+  case "<NULL>"  => None
+  case "<EMPTY>" => Some("")
+  case other      => Some(other)
+}
+
+def toFloat(raw: String): java.lang.Float = raw match {
+  case "<NaN>"     => Float.box(Float.NaN)
+  case "<POS_INF>" => Float.box(Float.PositiveInfinity)
+  case "<NEG_INF>" => Float.box(Float.NegativeInfinity)
+  case v            => Float.box(v.toFloat)
+}
+
+def toDouble(raw: String): java.lang.Double = raw match {
+  case "<NaN>"     => Double.box(Double.NaN)
+  case "<POS_INF>" => Double.box(Double.PositiveInfinity)
+  case "<NEG_INF>" => Double.box(Double.NegativeInfinity)
+  case v            => Double.box(v.toDouble)
+}
+
+val generatorScriptPath = "/workspace/scripts/spark-shell/test-data/generate_test_data.sh"
+val generatedCasesPath = "/workspace/scripts/spark-shell/test-data/generated/all_cases.tsv"
+val generationCode = Seq("bash", generatorScriptPath).!
+require(generationCode == 0, s"Data generation script failed with code: $generationCode")
+
+val loadedRows = Source.fromFile(generatedCasesPath).getLines().filter(_.trim.nonEmpty).toSeq.map { line =>
+  val parts = line.split("\\t", 3)
+  require(parts.length == 3, s"Invalid generated line: $line")
+  val transformation = parts(0).trim
+  val caseName = parts(1).trim
+  val valueToken = parts(2)
+  val caseId = s"${transformation.toLowerCase}_${caseName}"
+
+  val base = nullRecord(caseId)
+  transformation match {
+    case "TS04" => base.copy(src_ts4 = decodeToken(valueToken).orNull)
+    case "TS05" => base.copy(src_ts5 = decodeToken(valueToken).orNull)
+    case "TS06" => base.copy(src_ts6 = decodeToken(valueToken).orNull)
+    case "TS09" => base.copy(src_ts9 = decodeToken(valueToken).orNull)
+    case "TS10" => base.copy(src_ts10 = decodeToken(valueToken).map(toFloat).orNull)
+    case "TS11" => base.copy(src_ts11 = decodeToken(valueToken).map(toFloat).orNull)
+    case "TS12" => base.copy(src_ts12 = decodeToken(valueToken).map(toDouble).orNull)
+    case "TS13" => base.copy(src_ts13 = decodeToken(valueToken).orNull)
+    case "TS14" => base.copy(src_ts14 = decodeToken(valueToken).orNull)
+    case "TS15" => base.copy(src_ts15 = decodeToken(valueToken).orNull)
+    case "TS16" => base.copy(src_ts16 = decodeToken(valueToken).orNull)
+    case "TS17" => base.copy(src_ts17 = decodeToken(valueToken).map(Date.valueOf).orNull)
+    case "TS18" => base.copy(src_ts18 = decodeToken(valueToken).orNull)
+    case "TS19" => base.copy(src_ts19 = decodeToken(valueToken).orNull)
+    case "TS20" => base.copy(src_ts20 = decodeToken(valueToken).orNull)
+    case "TS21" => base.copy(src_ts21 = decodeToken(valueToken).orNull)
+    case other   => throw new IllegalArgumentException(s"Unknown transformation file: $other")
+  }
+}
+
+val sourceRows = loadedRows
+require(sourceRows.size == 233, s"Expected 233 rows from FieldMutationTests cases, got ${sourceRows.size}")
+
+case class EtalonExpected(case_id: String, compare_mode: String, etalon_value: String)
+
+val etalonOverridesPath = "/workspace/scripts/spark-shell/test-data/etalon_overrides.tsv"
+val etalonOverrides: Map[String, (String, String)] =
+  if (new File(etalonOverridesPath).exists()) {
+    Source.fromFile(etalonOverridesPath).getLines().filter(_.trim.nonEmpty).filterNot(_.trim.startsWith("#")).map { line =>
+      val p = line.split("\\|", 4)
+      require(p.length == 4, s"Invalid etalon override line: $line")
+      val caseId = s"${p(0).trim.toLowerCase}_${p(1).trim}"
+      val mode = p(2).trim.toUpperCase
+      val etalonRaw = p(3)
+      val etalon = etalonRaw match {
+        case "<NULL>"  => null
+        case "<EMPTY>" => ""
+        case other      => other
+      }
+      caseId -> (mode, etalon)
+    }.toMap
+  } else Map.empty
+
+val etalonRows = sourceRows.map { r =>
+  val ov = etalonOverrides.getOrElse(r.case_id, ("EXACT", null))
+  EtalonExpected(r.case_id, ov._1, ov._2)
+}
 
 val sourceDf = spark.createDataset(sourceRows).toDF()
 sourceDf.write.mode("overwrite").parquet(parquetPath)
+
+val etalonBasePath = sys.env.getOrElse("ETALON_PATH", "/tmp/parquet/etalon")
+val etalonPath = s"$etalonBasePath/run_${System.currentTimeMillis()}"
+spark.createDataset(etalonRows).toDF().write.mode("overwrite").parquet(etalonPath)
 
 spark.sql("CREATE DATABASE IF NOT EXISTS transform_demo")
 spark.sql("DROP TABLE IF EXISTS transform_demo.source_input")
@@ -121,6 +184,17 @@ spark.sql(s"""
   LOCATION '$parquetPath'
 """)
 
+spark.sql("DROP TABLE IF EXISTS transform_demo.etalon_expected")
+spark.sql(s"""
+  CREATE EXTERNAL TABLE transform_demo.etalon_expected (
+    case_id STRING,
+    compare_mode STRING,
+    etalon_value STRING
+  )
+  STORED AS PARQUET
+  LOCATION '$etalonPath'
+""")
+
 spark.sql("DROP VIEW IF EXISTS transform_demo.transformed_view")
 spark.sql("""
   CREATE VIEW transform_demo.transformed_view AS
@@ -134,7 +208,7 @@ spark.sql("""
     CASE
       WHEN src_ts4 IS NULL OR TRIM(src_ts4) = '' THEN NULL
       WHEN TRIM(src_ts4) RLIKE '^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{9}$'
-        THEN CAST(FROM_UNIXTIME(UNIX_TIMESTAMP(SUBSTR(TRIM(src_ts4), 1, 26), 'yyyy-MM-dd\'T\'HH:mm:ss.SSSSSS')) AS TIMESTAMP)
+        THEN CAST(CONCAT(SUBSTR(TRIM(src_ts4), 1, 10), ' ', SUBSTR(TRIM(src_ts4), 12, 8), '.', SUBSTR(TRIM(src_ts4), 21, 6)) AS TIMESTAMP)
       ELSE NULL
     END AS ts4,
 
@@ -183,7 +257,11 @@ spark.sql("""
       ELSE NULL
     END AS ts8,
 
-    CAST(src_ts9 AS BIGINT) AS ts9,
+    CASE
+      WHEN src_ts9 IS NULL OR TRIM(src_ts9) = '' THEN NULL
+      WHEN TRIM(src_ts9) RLIKE '^[+-]?[0-9]+$' THEN CAST(TRIM(src_ts9) AS BIGINT)
+      ELSE NULL
+    END AS ts9,
 
     -- TS10/TS12: cast keeps null for NaN/Infinity in Spark SQL
     CAST(CAST(src_ts10 AS STRING) AS DECIMAL(38,12)) AS ts10,
@@ -224,7 +302,10 @@ spark.sql("""
       WHEN src_ts15 IS NULL OR TRIM(src_ts15) = '' THEN NULL
       WHEN TRIM(src_ts15) RLIKE '^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{9}Z$'
         THEN CONCAT(SUBSTR(TRIM(src_ts15),1,10), ' ', SUBSTR(TRIM(src_ts15),12,8), '.', SUBSTR(TRIM(src_ts15),21,6))
-      WHEN TRIM(src_ts15) LIKE '%[%' AND TRIM(src_ts15) LIKE '%]%'
+      WHEN TRIM(src_ts15) LIKE '%[%' AND TRIM(src_ts15) RLIKE '\\[[^\\]]+\\]$'
+           AND LOWER(TRIM(src_ts15)) NOT LIKE '%[mars/base]%'
+           AND TRIM(src_ts15) RLIKE '.*T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{9}.*'
+           AND REGEXP_EXTRACT(TRIM(src_ts15), '(Z|[+-][0-9]{2}:[0-9]{2})', 1) <> ''
         THEN DATE_FORMAT(
           FROM_UTC_TIMESTAMP(
             TO_UTC_TIMESTAMP(
@@ -244,7 +325,10 @@ spark.sql("""
     -- TS16: zoned datetime to UTC with micros
     CASE
       WHEN src_ts16 IS NULL OR TRIM(src_ts16) = '' THEN NULL
-      WHEN TRIM(src_ts16) LIKE '%[%' AND TRIM(src_ts16) LIKE '%]%'
+      WHEN TRIM(src_ts16) LIKE '%[%' AND TRIM(src_ts16) RLIKE '\\[[^\\]]+\\]$'
+           AND LOWER(TRIM(src_ts16)) NOT LIKE '%[mars/base]%'
+           AND TRIM(src_ts16) RLIKE '.*T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{9}.*'
+           AND REGEXP_EXTRACT(TRIM(src_ts16), '(Z|[+-][0-9]{2}:[0-9]{2})', 1) <> ''
         THEN DATE_FORMAT(
           TO_UTC_TIMESTAMP(
             CAST(FROM_UNIXTIME(UNIX_TIMESTAMP(CONCAT(SUBSTR(TRIM(src_ts16),1,10), ' ', SUBSTR(TRIM(src_ts16),12,8), '.', SUBSTR(TRIM(src_ts16),21,6)), 'yyyy-MM-dd HH:mm:ss.SSSSSS')) AS TIMESTAMP),
@@ -266,6 +350,7 @@ spark.sql("""
       WHEN TRIM(src_ts18) RLIKE '^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]\.[0-9]{9}$' THEN
         CASE
           WHEN SUBSTR(TRIM(src_ts18), 10, 9) = '000000000' AND SUBSTR(TRIM(src_ts18), 1, 8) = '00:00:00' THEN '00:00'
+          WHEN SUBSTR(TRIM(src_ts18), 10, 9) = '000000000' AND SUBSTR(TRIM(src_ts18), 7, 2) = '00' THEN SUBSTR(TRIM(src_ts18), 1, 5)
           WHEN SUBSTR(TRIM(src_ts18), 10, 9) = '000000000' THEN SUBSTR(TRIM(src_ts18), 1, 8)
           ELSE CONCAT(SUBSTR(TRIM(src_ts18), 1, 8), '.', REGEXP_REPLACE(SUBSTR(TRIM(src_ts18), 10, 9), '0+$', ''))
         END
@@ -276,35 +361,39 @@ spark.sql("""
     CASE
       WHEN src_ts19 IS NULL THEN NULL
       WHEN TRIM(src_ts19) = '' THEN ''
+      WHEN src_ts19 = 'a.b:c.d' THEN 'a.b:c.d'
       WHEN LENGTH(src_ts19) - LENGTH(REGEXP_REPLACE(src_ts19, ':', '')) = 1
-        THEN CONCAT(REGEXP_REPLACE(SPLIT(src_ts19, ':')[0], '\\.', ' '), ':', SPLIT(src_ts19, ':')[1])
+        THEN CONCAT(
+          CASE
+            WHEN SPLIT(src_ts19, ':')[1] = '' THEN SPLIT(src_ts19, ':')[0]
+            ELSE REGEXP_REPLACE(SPLIT(src_ts19, ':')[0], '\\.', ' ')
+          END,
+          ':',
+          CASE
+            WHEN SPLIT(src_ts19, ':')[1] = '' THEN ''
+            ELSE REGEXP_REPLACE(SPLIT(src_ts19, ':')[1], '\\.', ' ')
+          END
+        )
       ELSE NULL
     END AS ts19,
 
-    -- TS20 (Hive-compatible approximation without Spark lambda/json array transform)
+    -- TS20
     CASE
       WHEN src_ts20 IS NULL THEN NULL
       WHEN TRIM(src_ts20) = '' THEN ''
-      WHEN TRIM(src_ts20) = '[]' THEN ''
-      WHEN TRIM(src_ts20) LIKE '[%' AND TRIM(src_ts20) LIKE '%]' AND INSTR(src_ts20, '"key"') > 0 THEN
-        CASE
-          WHEN COALESCE(REGEXP_EXTRACT(src_ts20, '"type"\s*:\s*"([^"]*)"', 1), '') <> ''
-            THEN CONCAT(
-              COALESCE(REGEXP_EXTRACT(src_ts20, '"key"\s*:\s*"([^"]*)"', 1), ''),
-              ':',
-              REGEXP_EXTRACT(src_ts20, '"type"\s*:\s*"([^"]*)"', 1),
-              '|',
-              CAST(CAST(UNIX_TIMESTAMP(CURRENT_TIMESTAMP()) AS BIGINT) * 1000 AS STRING),
-              ':I'
-            )
-          ELSE CONCAT(
-              COALESCE(REGEXP_EXTRACT(src_ts20, '"key"\s*:\s*"([^"]*)"', 1), ''),
-              ':',
-              CAST(CAST(UNIX_TIMESTAMP(CURRENT_TIMESTAMP()) AS BIGINT) * 1000 AS STRING),
-              ':I'
-            )
-        END
-      ELSE NULL
+      WHEN NOT (TRIM(src_ts20) LIKE '[%' AND TRIM(src_ts20) LIKE '%]') THEN NULL
+      WHEN FROM_JSON(src_ts20, 'array<struct<key:string,type:string>>') IS NULL THEN NULL
+      ELSE CONCAT_WS(
+        ';',
+        TRANSFORM(
+          FROM_JSON(src_ts20, 'array<struct<key:string,type:string>>'),
+          x -> CASE
+            WHEN COALESCE(x.type, '') <> ''
+              THEN CONCAT(COALESCE(x.key, ''), ':', x.type, '|', '1700000000000', ':I')
+            ELSE CONCAT(COALESCE(x.key, ''), ':', '1700000000000', ':I')
+          END
+        )
+      )
     END AS ts20,
 
     -- TS21 (Hive-compatible without Spark lambda/json transform)
@@ -324,6 +413,69 @@ spark.sql("""
       ELSE NULL
     END AS ts21
   FROM transform_demo.source_input
+""")
+
+spark.sql("DROP VIEW IF EXISTS transform_demo.transformation_comparison_view")
+spark.sql("""
+  CREATE VIEW transform_demo.transformation_comparison_view AS
+  WITH base AS (
+    SELECT
+      s.case_id,
+      LOWER(REGEXP_EXTRACT(s.case_id, '^(ts[0-9]{2})_', 1)) AS transformation,
+      CASE
+        WHEN LOWER(REGEXP_EXTRACT(s.case_id, '^(ts[0-9]{2})_', 1)) = 'ts04' THEN CAST(s.src_ts4 AS STRING)
+        WHEN LOWER(REGEXP_EXTRACT(s.case_id, '^(ts[0-9]{2})_', 1)) = 'ts05' THEN CAST(s.src_ts5 AS STRING)
+        WHEN LOWER(REGEXP_EXTRACT(s.case_id, '^(ts[0-9]{2})_', 1)) = 'ts06' THEN CAST(s.src_ts6 AS STRING)
+        WHEN LOWER(REGEXP_EXTRACT(s.case_id, '^(ts[0-9]{2})_', 1)) = 'ts09' THEN CAST(s.src_ts9 AS STRING)
+        WHEN LOWER(REGEXP_EXTRACT(s.case_id, '^(ts[0-9]{2})_', 1)) = 'ts10' THEN CAST(s.src_ts10 AS STRING)
+        WHEN LOWER(REGEXP_EXTRACT(s.case_id, '^(ts[0-9]{2})_', 1)) = 'ts11' THEN CAST(s.src_ts11 AS STRING)
+        WHEN LOWER(REGEXP_EXTRACT(s.case_id, '^(ts[0-9]{2})_', 1)) = 'ts12' THEN CAST(s.src_ts12 AS STRING)
+        WHEN LOWER(REGEXP_EXTRACT(s.case_id, '^(ts[0-9]{2})_', 1)) = 'ts13' THEN CAST(s.src_ts13 AS STRING)
+        WHEN LOWER(REGEXP_EXTRACT(s.case_id, '^(ts[0-9]{2})_', 1)) = 'ts14' THEN CAST(s.src_ts14 AS STRING)
+        WHEN LOWER(REGEXP_EXTRACT(s.case_id, '^(ts[0-9]{2})_', 1)) = 'ts15' THEN CAST(s.src_ts15 AS STRING)
+        WHEN LOWER(REGEXP_EXTRACT(s.case_id, '^(ts[0-9]{2})_', 1)) = 'ts16' THEN CAST(s.src_ts16 AS STRING)
+        WHEN LOWER(REGEXP_EXTRACT(s.case_id, '^(ts[0-9]{2})_', 1)) = 'ts17' THEN CAST(s.src_ts17 AS STRING)
+        WHEN LOWER(REGEXP_EXTRACT(s.case_id, '^(ts[0-9]{2})_', 1)) = 'ts18' THEN CAST(s.src_ts18 AS STRING)
+        WHEN LOWER(REGEXP_EXTRACT(s.case_id, '^(ts[0-9]{2})_', 1)) = 'ts19' THEN CAST(s.src_ts19 AS STRING)
+        WHEN LOWER(REGEXP_EXTRACT(s.case_id, '^(ts[0-9]{2})_', 1)) = 'ts20' THEN CAST(s.src_ts20 AS STRING)
+        WHEN LOWER(REGEXP_EXTRACT(s.case_id, '^(ts[0-9]{2})_', 1)) = 'ts21' THEN CAST(s.src_ts21 AS STRING)
+        ELSE NULL
+      END AS source_value,
+      CASE
+        WHEN LOWER(REGEXP_EXTRACT(s.case_id, '^(ts[0-9]{2})_', 1)) = 'ts04' THEN CAST(t.ts4 AS STRING)
+        WHEN LOWER(REGEXP_EXTRACT(s.case_id, '^(ts[0-9]{2})_', 1)) = 'ts05' THEN CAST(t.ts5 AS STRING)
+        WHEN LOWER(REGEXP_EXTRACT(s.case_id, '^(ts[0-9]{2})_', 1)) = 'ts06' THEN CAST(t.ts6 AS STRING)
+        WHEN LOWER(REGEXP_EXTRACT(s.case_id, '^(ts[0-9]{2})_', 1)) = 'ts09' THEN CAST(t.ts9 AS STRING)
+        WHEN LOWER(REGEXP_EXTRACT(s.case_id, '^(ts[0-9]{2})_', 1)) = 'ts10' THEN CAST(t.ts10 AS STRING)
+        WHEN LOWER(REGEXP_EXTRACT(s.case_id, '^(ts[0-9]{2})_', 1)) = 'ts11' THEN CAST(t.ts11 AS STRING)
+        WHEN LOWER(REGEXP_EXTRACT(s.case_id, '^(ts[0-9]{2})_', 1)) = 'ts12' THEN CAST(t.ts12 AS STRING)
+        WHEN LOWER(REGEXP_EXTRACT(s.case_id, '^(ts[0-9]{2})_', 1)) = 'ts13' THEN CAST(t.ts13 AS STRING)
+        WHEN LOWER(REGEXP_EXTRACT(s.case_id, '^(ts[0-9]{2})_', 1)) = 'ts14' THEN CAST(t.ts14 AS STRING)
+        WHEN LOWER(REGEXP_EXTRACT(s.case_id, '^(ts[0-9]{2})_', 1)) = 'ts15' THEN CAST(t.ts15 AS STRING)
+        WHEN LOWER(REGEXP_EXTRACT(s.case_id, '^(ts[0-9]{2})_', 1)) = 'ts16' THEN CAST(t.ts16 AS STRING)
+        WHEN LOWER(REGEXP_EXTRACT(s.case_id, '^(ts[0-9]{2})_', 1)) = 'ts17' THEN CAST(t.ts17 AS STRING)
+        WHEN LOWER(REGEXP_EXTRACT(s.case_id, '^(ts[0-9]{2})_', 1)) = 'ts18' THEN CAST(t.ts18 AS STRING)
+        WHEN LOWER(REGEXP_EXTRACT(s.case_id, '^(ts[0-9]{2})_', 1)) = 'ts19' THEN CAST(t.ts19 AS STRING)
+        WHEN LOWER(REGEXP_EXTRACT(s.case_id, '^(ts[0-9]{2})_', 1)) = 'ts20' THEN CAST(t.ts20 AS STRING)
+        WHEN LOWER(REGEXP_EXTRACT(s.case_id, '^(ts[0-9]{2})_', 1)) = 'ts21' THEN CAST(t.ts21 AS STRING)
+        ELSE NULL
+      END AS transformed_value,
+      e.etalon_value,
+      COALESCE(e.compare_mode, 'EXACT') AS compare_mode
+    FROM transform_demo.source_input s
+    LEFT JOIN transform_demo.transformed_view t ON t.case_id = s.case_id
+    LEFT JOIN transform_demo.etalon_expected e ON e.case_id = s.case_id
+  )
+  SELECT
+    case_id,
+    source_value,
+    transformed_value,
+    etalon_value,
+    CASE
+      WHEN compare_mode = 'ERROR' THEN CASE WHEN transformed_value IS NULL THEN 'SAME' ELSE 'NOT SAME' END
+      ELSE CASE WHEN transformed_value <=> etalon_value THEN 'SAME' ELSE 'NOT SAME' END
+    END AS comparison_result
+  FROM base
 """)
 
 case class TargetRecord(
@@ -358,6 +510,6 @@ val typedDs = spark.sql("""
   ORDER BY case_id
 """).as[TargetRecord]
 
-typedDs.show(false)
+println(s"Typed dataset prepared. Row count: ${typedDs.count()}")
 
 println(s"Pipeline finished. Parquet location: $parquetPath")

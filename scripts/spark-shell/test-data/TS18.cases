@@ -1,0 +1,12 @@
+all_nanos|13:42:43.123456789
+seconds_only|13:42:43.000000000
+midnight|00:00:00.000000000
+micros|10:00:00.123456000
+edge_time|23:59:59.999999999
+with_spaces| 08:30:00.000000000
+invalid_hour|25:00:00.000000000
+short_nano|13:42:43.123
+with_date|2024-05-20T13:42:43.123456789
+null|<NULL>
+empty|<EMPTY>
+

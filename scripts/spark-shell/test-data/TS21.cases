@@ -1,0 +1,7 @@
+standard|["123", "12345"]
+with_null|["123", "12345", null]
+only_nulls|[null, null]
+empty_array|[]
+one_item|["single"]
+null|<NULL>
+

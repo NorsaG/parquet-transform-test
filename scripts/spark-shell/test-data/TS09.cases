@@ -1,0 +1,21 @@
+simple|123
+negative|-456
+max_long|9223372036854775807
+min_long|-9223372036854775808
+with_spaces| 1000
+zero|0
+leading_zeros|000008
+empty|<EMPTY>
+blanks|
+null|<NULL>
+plus_prefix|+50
+overflow_max_plus_1|9223372036854775808
+overflow_min_minus_1|-9223372036854775809
+extremely_big|1000000000000000000000
+decimal_dot|12.3
+decimal_comma|12,3
+text|abc
+alnum|123a
+symbols|@#$
+double_minus|--10
+

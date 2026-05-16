@@ -1,0 +1,24 @@
+moscow|2024-05-20T13:15:30.123456789+03:00[Europe/Moscow]
+london_bst|2024-05-20T10:15:30.123456789+01:00[Europe/London]
+new_york|2024-05-20T08:00:00.000000000-04:00[America/New_York]
+tokyo|2024-05-20T20:00:00.999999999+09:00[Asia/Tokyo]
+utc_zone|2024-05-20T10:00:00.000000000Z[UTC]
+short_zone_id|2024-05-20T10:00:00.000000000+03:00[GMT+03:00]
+offset_0530|2024-05-20T10:00:00.000000000+05:30[Asia/Kolkata]
+zone_underscore|2024-05-20T10:00:00.000000000+02:00[Europe/Kaliningrad]
+zone_dash|2024-05-20T10:00:00.000000000-03:00[America/Argentina/Buenos_Aires]
+with_spaces| 2024-05-20T10:15:30.123456789Z
+mismatch_offset_zone|2024-05-20T10:15:30.123456789+05:00[Europe/Moscow]
+null|<NULL>
+empty|<EMPTY>
+blanks|
+no_brackets|2024-05-20T10:15:30.123456789+03:00Europe/Moscow
+no_zone|2024-05-20T10:15:30.123456789+03:00
+invalid_zone|2024-05-20T10:15:30.123456789+03:00[Mars/Base]
+unclosed_bracket|2024-05-20T10:15:30.123456789+03:00[Europe/Moscow
+space_separator|2024-05-20 10:15:30.123456789+03:00[Europe/Moscow]
+short_nano|2024-05-20T10:15:30.123+03:00[Europe/Moscow]
+text|any-random-string
+zone_only|[Europe/Moscow]
+zone_before_offset|2024-05-20T10:15:30.123456789[Europe/Moscow]+03:00
+
