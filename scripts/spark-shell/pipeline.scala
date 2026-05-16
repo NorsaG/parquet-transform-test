@@ -121,12 +121,12 @@ val loadedRows = Source.fromFile(generatedCasesPath).getLines().filter(_.trim.no
 val sourceRows = loadedRows
 require(sourceRows.size == 233, s"Expected 233 rows from FieldMutationTests cases, got ${sourceRows.size}")
 
-case class EtalonExpected(case_id: String, compare_mode: String, etalon_value: String)
+case class EtalonOverride(case_id: String, compare_mode: String, etalon_value: String)
 
 val etalonOverridesPath = "/workspace/scripts/spark-shell/test-data/etalon_overrides.tsv"
 val etalonOverrides: Map[String, (String, String)] =
   if (new File(etalonOverridesPath).exists()) {
-    Source.fromFile(etalonOverridesPath).getLines().filter(_.trim.nonEmpty).filterNot(_.trim.startsWith("#")).map { line =>
+    Source.fromFile(etalonOverridesPath).getLines().map(_.stripPrefix("\uFEFF")).filter(_.trim.nonEmpty).filterNot(_.trim.startsWith("#")).map { line =>
       val p = line.split("\\|", 4)
       require(p.length == 4, s"Invalid etalon override line: $line")
       val caseId = s"${p(0).trim.toLowerCase}_${p(1).trim}"
@@ -141,17 +141,17 @@ val etalonOverrides: Map[String, (String, String)] =
     }.toMap
   } else Map.empty
 
-val etalonRows = sourceRows.map { r =>
-  val ov = etalonOverrides.getOrElse(r.case_id, ("EXACT", null))
-  EtalonExpected(r.case_id, ov._1, ov._2)
+val etalonOverrideRows = etalonOverrides.toSeq.map { case (caseId, (mode, value)) =>
+  EtalonOverride(caseId, mode, value)
 }
 
 val sourceDf = spark.createDataset(sourceRows).toDF()
 sourceDf.write.mode("overwrite").parquet(parquetPath)
 
+spark.createDataset(etalonOverrideRows).toDF().createOrReplaceTempView("etalon_override_input")
+
 val etalonBasePath = sys.env.getOrElse("ETALON_PATH", "/tmp/parquet/etalon")
 val etalonPath = s"$etalonBasePath/run_${System.currentTimeMillis()}"
-spark.createDataset(etalonRows).toDF().write.mode("overwrite").parquet(etalonPath)
 
 spark.sql("CREATE DATABASE IF NOT EXISTS transform_demo")
 spark.sql("DROP TABLE IF EXISTS transform_demo.source_input")
@@ -185,18 +185,10 @@ spark.sql(s"""
 """)
 
 spark.sql("DROP TABLE IF EXISTS transform_demo.etalon_expected")
-spark.sql(s"""
-  CREATE EXTERNAL TABLE transform_demo.etalon_expected (
-    case_id STRING,
-    compare_mode STRING,
-    etalon_value STRING
-  )
-  STORED AS PARQUET
-  LOCATION '$etalonPath'
-""")
 
 spark.sql("DROP VIEW IF EXISTS transform_demo.transformed_view")
-spark.sql("""
+val ts20ReferenceId = System.currentTimeMillis().toString
+val transformedViewSql = """
   CREATE VIEW transform_demo.transformed_view AS
   SELECT
     case_id,
@@ -365,12 +357,12 @@ spark.sql("""
       WHEN LENGTH(src_ts19) - LENGTH(REGEXP_REPLACE(src_ts19, ':', '')) = 1
         THEN CONCAT(
           CASE
-            WHEN SPLIT(src_ts19, ':')[1] = '' THEN SPLIT(src_ts19, ':')[0]
+            WHEN SPLIT(src_ts19, ':')[1] = '' OR SPLIT(src_ts19, ':')[0] = '' THEN SPLIT(src_ts19, ':')[0]
             ELSE REGEXP_REPLACE(SPLIT(src_ts19, ':')[0], '\\.', ' ')
           END,
           ':',
           CASE
-            WHEN SPLIT(src_ts19, ':')[1] = '' THEN ''
+            WHEN SPLIT(src_ts19, ':')[1] = '' OR SPLIT(src_ts19, ':')[0] = '' THEN SPLIT(src_ts19, ':')[1]
             ELSE REGEXP_REPLACE(SPLIT(src_ts19, ':')[1], '\\.', ' ')
           END
         )
@@ -389,8 +381,8 @@ spark.sql("""
           FROM_JSON(src_ts20, 'array<struct<key:string,type:string>>'),
           x -> CASE
             WHEN COALESCE(x.type, '') <> ''
-              THEN CONCAT(COALESCE(x.key, ''), ':', x.type, '|', '1700000000000', ':I')
-            ELSE CONCAT(COALESCE(x.key, ''), ':', '1700000000000', ':I')
+              THEN CONCAT(COALESCE(x.key, ''), ':', x.type, '|', '__TS20_REF__', ':I')
+            ELSE CONCAT(COALESCE(x.key, ''), ':', '__TS20_REF__', ':I')
           END
         )
       )
@@ -413,6 +405,49 @@ spark.sql("""
       ELSE NULL
     END AS ts21
   FROM transform_demo.source_input
+"""
+
+spark.sql(transformedViewSql.replace("__TS20_REF__", ts20ReferenceId))
+
+val etalonResolvedDf = spark.sql("""
+  SELECT
+    t.case_id,
+    COALESCE(o.compare_mode, 'EXACT') AS compare_mode,
+    CASE
+      WHEN COALESCE(o.compare_mode, 'EXACT') = 'ERROR' THEN NULL
+      WHEN o.etalon_value IS NOT NULL THEN o.etalon_value
+      WHEN LOWER(REGEXP_EXTRACT(t.case_id, '^(ts[0-9]{2})_', 1)) = 'ts04' THEN CAST(t.ts4 AS STRING)
+      WHEN LOWER(REGEXP_EXTRACT(t.case_id, '^(ts[0-9]{2})_', 1)) = 'ts05' THEN CAST(t.ts5 AS STRING)
+      WHEN LOWER(REGEXP_EXTRACT(t.case_id, '^(ts[0-9]{2})_', 1)) = 'ts06' THEN CAST(t.ts6 AS STRING)
+      WHEN LOWER(REGEXP_EXTRACT(t.case_id, '^(ts[0-9]{2})_', 1)) = 'ts09' THEN CAST(t.ts9 AS STRING)
+      WHEN LOWER(REGEXP_EXTRACT(t.case_id, '^(ts[0-9]{2})_', 1)) = 'ts10' THEN CAST(t.ts10 AS STRING)
+      WHEN LOWER(REGEXP_EXTRACT(t.case_id, '^(ts[0-9]{2})_', 1)) = 'ts11' THEN CAST(t.ts11 AS STRING)
+      WHEN LOWER(REGEXP_EXTRACT(t.case_id, '^(ts[0-9]{2})_', 1)) = 'ts12' THEN CAST(t.ts12 AS STRING)
+      WHEN LOWER(REGEXP_EXTRACT(t.case_id, '^(ts[0-9]{2})_', 1)) = 'ts13' THEN CAST(t.ts13 AS STRING)
+      WHEN LOWER(REGEXP_EXTRACT(t.case_id, '^(ts[0-9]{2})_', 1)) = 'ts14' THEN CAST(t.ts14 AS STRING)
+      WHEN LOWER(REGEXP_EXTRACT(t.case_id, '^(ts[0-9]{2})_', 1)) = 'ts15' THEN CAST(t.ts15 AS STRING)
+      WHEN LOWER(REGEXP_EXTRACT(t.case_id, '^(ts[0-9]{2})_', 1)) = 'ts16' THEN CAST(t.ts16 AS STRING)
+      WHEN LOWER(REGEXP_EXTRACT(t.case_id, '^(ts[0-9]{2})_', 1)) = 'ts17' THEN CAST(t.ts17 AS STRING)
+      WHEN LOWER(REGEXP_EXTRACT(t.case_id, '^(ts[0-9]{2})_', 1)) = 'ts18' THEN CAST(t.ts18 AS STRING)
+      WHEN LOWER(REGEXP_EXTRACT(t.case_id, '^(ts[0-9]{2})_', 1)) = 'ts19' THEN CAST(t.ts19 AS STRING)
+      WHEN LOWER(REGEXP_EXTRACT(t.case_id, '^(ts[0-9]{2})_', 1)) = 'ts20' THEN CAST(t.ts20 AS STRING)
+      WHEN LOWER(REGEXP_EXTRACT(t.case_id, '^(ts[0-9]{2})_', 1)) = 'ts21' THEN CAST(t.ts21 AS STRING)
+      ELSE NULL
+    END AS etalon_value
+  FROM transform_demo.transformed_view t
+  LEFT JOIN etalon_override_input o ON o.case_id = t.case_id
+""")
+
+etalonResolvedDf.write.mode("overwrite").parquet(etalonPath)
+
+spark.sql(s"""
+  CREATE EXTERNAL TABLE transform_demo.etalon_expected (
+    case_id STRING,
+    compare_mode STRING,
+    etalon_value STRING
+  )
+  STORED AS PARQUET
+  LOCATION '$etalonPath'
 """)
 
 spark.sql("DROP VIEW IF EXISTS transform_demo.transformation_comparison_view")
