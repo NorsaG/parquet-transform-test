@@ -187,7 +187,6 @@ spark.sql(s"""
 spark.sql("DROP TABLE IF EXISTS transform_demo.etalon_expected")
 
 spark.sql("DROP VIEW IF EXISTS transform_demo.transformed_view")
-val ts20ReferenceId = System.currentTimeMillis().toString
 val transformedViewSql = """
   CREATE VIEW transform_demo.transformed_view AS
   SELECT
@@ -381,8 +380,8 @@ val transformedViewSql = """
           FROM_JSON(src_ts20, 'array<struct<key:string,type:string>>'),
           x -> CASE
             WHEN COALESCE(x.type, '') <> ''
-              THEN CONCAT(COALESCE(x.key, ''), ':', x.type, '|', '__TS20_REF__', ':I')
-            ELSE CONCAT(COALESCE(x.key, ''), ':', '__TS20_REF__', ':I')
+              THEN CONCAT(COALESCE(x.key, ''), ':', x.type, '|', CAST(CAST(UNIX_TIMESTAMP(CURRENT_TIMESTAMP()) AS BIGINT) * 1000 AS STRING), ':I')
+            ELSE CONCAT(COALESCE(x.key, ''), ':', CAST(CAST(UNIX_TIMESTAMP(CURRENT_TIMESTAMP()) AS BIGINT) * 1000 AS STRING), ':I')
           END
         )
       )
@@ -407,7 +406,7 @@ val transformedViewSql = """
   FROM transform_demo.source_input
 """
 
-spark.sql(transformedViewSql.replace("__TS20_REF__", ts20ReferenceId))
+spark.sql(transformedViewSql)
 
 val etalonResolvedDf = spark.sql("""
   SELECT
@@ -508,6 +507,13 @@ spark.sql("""
     etalon_value,
     CASE
       WHEN compare_mode = 'ERROR' THEN CASE WHEN transformed_value IS NULL THEN 'SAME' ELSE 'NOT SAME' END
+      WHEN transformation = 'ts20' THEN
+        CASE
+          WHEN REGEXP_REPLACE(REGEXP_REPLACE(transformed_value, '\\|[0-9]+:I', '|<ts>:I'), ':[0-9]+:I', ':<ts>:I')
+             <=> REGEXP_REPLACE(REGEXP_REPLACE(etalon_value, '\\|[0-9]+:I', '|<ts>:I'), ':[0-9]+:I', ':<ts>:I')
+            THEN 'SAME'
+          ELSE 'NOT SAME'
+        END
       ELSE CASE WHEN transformed_value <=> etalon_value THEN 'SAME' ELSE 'NOT SAME' END
     END AS comparison_result
   FROM base
