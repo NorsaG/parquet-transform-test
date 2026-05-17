@@ -1,4 +1,4 @@
-USE transform_demo;
+-- USE default;
 
 DROP VIEW IF EXISTS transformed_view;
 
@@ -78,4 +78,4 @@ SELECT
             )
     ) AS ts21
 
-FROM source_input
+FROM default.source_input

@@ -1,8 +1,8 @@
-CREATE DATABASE IF NOT EXISTS transform_demo;
-USE transform_demo;
+-- Using default schema (no CREATE DATABASE required).
+-- USE default;
 
-DROP TABLE IF EXISTS source_input;
-CREATE EXTERNAL TABLE source_input (
+DROP TABLE IF EXISTS default.source_input;
+CREATE EXTERNAL TABLE default.source_input (
   src_ts1 DATE,
   src_ts2 INT,
   src_ts3 STRING,

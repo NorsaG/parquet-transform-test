@@ -1,4 +1,4 @@
-USE transform_demo;
+-- USE default;
 
 SELECT
   case_id,
@@ -25,6 +25,6 @@ SELECT
     ),
     'yyyy-MM-dd HH:mm:ss.SSSSSS'
   ) AS computed_ts16
-FROM source_input
+FROM default.source_input
 WHERE case_id IN ('baseline_valid', 'ts15_offset_zone_mismatch', 'ts16_india');
 

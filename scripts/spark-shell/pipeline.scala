@@ -153,10 +153,10 @@ spark.createDataset(etalonOverrideRows).toDF().createOrReplaceTempView("etalon_o
 val etalonBasePath = sys.env.getOrElse("ETALON_PATH", "/tmp/parquet/etalon")
 val etalonPath = s"$etalonBasePath/run_${System.currentTimeMillis()}"
 
-spark.sql("CREATE DATABASE IF NOT EXISTS transform_demo")
-spark.sql("DROP TABLE IF EXISTS transform_demo.source_input")
+// spark.sql("USE default")
+spark.sql("DROP TABLE IF EXISTS default.source_input")
 spark.sql(s"""
-  CREATE EXTERNAL TABLE transform_demo.source_input (
+  CREATE EXTERNAL TABLE default.source_input (
     case_id STRING,
     src_ts1 DATE,
     src_ts2 INT,
@@ -184,11 +184,11 @@ spark.sql(s"""
   LOCATION '$parquetPath'
 """)
 
-spark.sql("DROP TABLE IF EXISTS transform_demo.etalon_expected")
+spark.sql("DROP TABLE IF EXISTS default.etalon_expected")
 
-spark.sql("DROP VIEW IF EXISTS transform_demo.transformed_view")
+spark.sql("DROP VIEW IF EXISTS default.transformed_view")
 val transformedViewSql = """
-  CREATE VIEW transform_demo.transformed_view AS
+  CREATE VIEW default.transformed_view AS
   SELECT
     case_id,
     CAST(src_ts1 AS TIMESTAMP) AS ts1,
@@ -403,7 +403,7 @@ val transformedViewSql = """
              )
       ELSE NULL
     END AS ts21
-  FROM transform_demo.source_input
+  FROM default.source_input
 """
 
 spark.sql(transformedViewSql)
@@ -433,14 +433,14 @@ val etalonResolvedDf = spark.sql("""
       WHEN LOWER(REGEXP_EXTRACT(t.case_id, '^(ts[0-9]{2})_', 1)) = 'ts21' THEN CAST(t.ts21 AS STRING)
       ELSE NULL
     END AS etalon_value
-  FROM transform_demo.transformed_view t
+  FROM default.transformed_view t
   LEFT JOIN etalon_override_input o ON o.case_id = t.case_id
 """)
 
 etalonResolvedDf.write.mode("overwrite").parquet(etalonPath)
 
 spark.sql(s"""
-  CREATE EXTERNAL TABLE transform_demo.etalon_expected (
+  CREATE EXTERNAL TABLE default.etalon_expected (
     case_id STRING,
     compare_mode STRING,
     etalon_value STRING
@@ -449,9 +449,9 @@ spark.sql(s"""
   LOCATION '$etalonPath'
 """)
 
-spark.sql("DROP VIEW IF EXISTS transform_demo.transformation_comparison_view")
+spark.sql("DROP VIEW IF EXISTS default.transformation_comparison_view")
 spark.sql("""
-  CREATE VIEW transform_demo.transformation_comparison_view AS
+  CREATE VIEW default.transformation_comparison_view AS
   WITH base AS (
     SELECT
       s.case_id,
@@ -496,9 +496,9 @@ spark.sql("""
       END AS transformed_value,
       e.etalon_value,
       COALESCE(e.compare_mode, 'EXACT') AS compare_mode
-    FROM transform_demo.source_input s
-    LEFT JOIN transform_demo.transformed_view t ON t.case_id = s.case_id
-    LEFT JOIN transform_demo.etalon_expected e ON e.case_id = s.case_id
+    FROM default.source_input s
+    LEFT JOIN default.transformed_view t ON t.case_id = s.case_id
+    LEFT JOIN default.etalon_expected e ON e.case_id = s.case_id
   )
   SELECT
     case_id,
@@ -547,10 +547,11 @@ case class TargetRecord(
 val typedDs = spark.sql("""
   SELECT case_id, ts1, ts2, ts3, ts4, ts5, ts6, ts7, ts8, ts9, ts10,
          ts11, ts12, ts13, ts14, ts15, ts16, ts17, ts18, ts19, ts20, ts21
-  FROM transform_demo.transformed_view
+  FROM default.transformed_view
   ORDER BY case_id
 """).as[TargetRecord]
 
 println(s"Typed dataset prepared. Row count: ${typedDs.count()}")
+typedDs.show(1000, false)
 
 println(s"Pipeline finished. Parquet location: $parquetPath")

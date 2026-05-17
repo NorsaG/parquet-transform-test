@@ -1,4 +1,4 @@
-USE transform_demo;
+-- USE default;
 
 -- TS04: expected rows >= 5
 WITH cases AS (
@@ -12,8 +12,8 @@ WITH cases AS (
 )
 SELECT c.case_id, s.src_ts4 AS source_value, v.ts4 AS transformed_value
 FROM cases c
-LEFT JOIN source_input s ON s.case_id = c.case_id
-LEFT JOIN transformed_view v ON v.case_id = c.case_id
+LEFT JOIN default.source_input s ON s.case_id = c.case_id
+LEFT JOIN default.transformed_view v ON v.case_id = c.case_id
 ORDER BY c.case_id;
 
 -- TS05: expected rows >= 19
@@ -27,8 +27,8 @@ WITH cases AS (
 )
 SELECT c.case_id, s.src_ts5 AS source_value, v.ts5 AS transformed_value
 FROM cases c
-LEFT JOIN source_input s ON s.case_id = c.case_id
-LEFT JOIN transformed_view v ON v.case_id = c.case_id
+LEFT JOIN default.source_input s ON s.case_id = c.case_id
+LEFT JOIN default.transformed_view v ON v.case_id = c.case_id
 ORDER BY c.case_id;
 
 -- TS06: expected rows >= 20
@@ -42,8 +42,8 @@ WITH cases AS (
 )
 SELECT c.case_id, s.src_ts6 AS source_value, v.ts6 AS transformed_value
 FROM cases c
-LEFT JOIN source_input s ON s.case_id = c.case_id
-LEFT JOIN transformed_view v ON v.case_id = c.case_id
+LEFT JOIN default.source_input s ON s.case_id = c.case_id
+LEFT JOIN default.transformed_view v ON v.case_id = c.case_id
 ORDER BY c.case_id;
 
 -- TS09: expected rows >= 20
@@ -57,8 +57,8 @@ WITH cases AS (
 )
 SELECT c.case_id, s.src_ts9 AS source_value, v.ts9 AS transformed_value
 FROM cases c
-LEFT JOIN source_input s ON s.case_id = c.case_id
-LEFT JOIN transformed_view v ON v.case_id = c.case_id
+LEFT JOIN default.source_input s ON s.case_id = c.case_id
+LEFT JOIN default.transformed_view v ON v.case_id = c.case_id
 ORDER BY c.case_id;
 
 -- TS10: expected rows >= 18
@@ -71,8 +71,8 @@ WITH cases AS (
 )
 SELECT c.case_id, CAST(s.src_ts10 AS STRING) AS source_value, CAST(v.ts10 AS STRING) AS transformed_value
 FROM cases c
-LEFT JOIN source_input s ON s.case_id = c.case_id
-LEFT JOIN transformed_view v ON v.case_id = c.case_id
+LEFT JOIN default.source_input s ON s.case_id = c.case_id
+LEFT JOIN default.transformed_view v ON v.case_id = c.case_id
 ORDER BY c.case_id;
 
 -- TS12: expected rows >= 14
@@ -84,8 +84,8 @@ WITH cases AS (
 )
 SELECT c.case_id, CAST(s.src_ts12 AS STRING) AS source_value, CAST(v.ts12 AS STRING) AS transformed_value
 FROM cases c
-LEFT JOIN source_input s ON s.case_id = c.case_id
-LEFT JOIN transformed_view v ON v.case_id = c.case_id
+LEFT JOIN default.source_input s ON s.case_id = c.case_id
+LEFT JOIN default.transformed_view v ON v.case_id = c.case_id
 ORDER BY c.case_id;
 
 -- TS13: expected rows >= 19
@@ -99,8 +99,8 @@ WITH cases AS (
 )
 SELECT c.case_id, s.src_ts13 AS source_value, v.ts13 AS transformed_value
 FROM cases c
-LEFT JOIN source_input s ON s.case_id = c.case_id
-LEFT JOIN transformed_view v ON v.case_id = c.case_id
+LEFT JOIN default.source_input s ON s.case_id = c.case_id
+LEFT JOIN default.transformed_view v ON v.case_id = c.case_id
 ORDER BY c.case_id;
 
 -- TS14: expected rows >= 22
@@ -114,8 +114,8 @@ WITH cases AS (
 )
 SELECT c.case_id, s.src_ts14 AS source_value, v.ts14 AS transformed_value
 FROM cases c
-LEFT JOIN source_input s ON s.case_id = c.case_id
-LEFT JOIN transformed_view v ON v.case_id = c.case_id
+LEFT JOIN default.source_input s ON s.case_id = c.case_id
+LEFT JOIN default.transformed_view v ON v.case_id = c.case_id
 ORDER BY c.case_id;
 
 -- TS15: expected rows >= 23
@@ -129,8 +129,8 @@ WITH cases AS (
 )
 SELECT c.case_id, s.src_ts15 AS source_value, v.ts15 AS transformed_value
 FROM cases c
-LEFT JOIN source_input s ON s.case_id = c.case_id
-LEFT JOIN transformed_view v ON v.case_id = c.case_id
+LEFT JOIN default.source_input s ON s.case_id = c.case_id
+LEFT JOIN default.transformed_view v ON v.case_id = c.case_id
 ORDER BY c.case_id;
 
 -- TS16: expected rows >= 10
@@ -142,8 +142,8 @@ WITH cases AS (
 )
 SELECT c.case_id, s.src_ts16 AS source_value, v.ts16 AS transformed_value
 FROM cases c
-LEFT JOIN source_input s ON s.case_id = c.case_id
-LEFT JOIN transformed_view v ON v.case_id = c.case_id
+LEFT JOIN default.source_input s ON s.case_id = c.case_id
+LEFT JOIN default.transformed_view v ON v.case_id = c.case_id
 ORDER BY c.case_id;
 
 -- TS18: expected rows >= 11
@@ -155,8 +155,8 @@ WITH cases AS (
 )
 SELECT c.case_id, s.src_ts18 AS source_value, v.ts18 AS transformed_value
 FROM cases c
-LEFT JOIN source_input s ON s.case_id = c.case_id
-LEFT JOIN transformed_view v ON v.case_id = c.case_id
+LEFT JOIN default.source_input s ON s.case_id = c.case_id
+LEFT JOIN default.transformed_view v ON v.case_id = c.case_id
 ORDER BY c.case_id;
 
 -- TS19: expected rows >= 10
@@ -168,8 +168,8 @@ WITH cases AS (
 )
 SELECT c.case_id, s.src_ts19 AS source_value, v.ts19 AS transformed_value
 FROM cases c
-LEFT JOIN source_input s ON s.case_id = c.case_id
-LEFT JOIN transformed_view v ON v.case_id = c.case_id
+LEFT JOIN default.source_input s ON s.case_id = c.case_id
+LEFT JOIN default.transformed_view v ON v.case_id = c.case_id
 ORDER BY c.case_id;
 
 -- TS20: expected rows >= 14
@@ -181,8 +181,8 @@ WITH cases AS (
 )
 SELECT c.case_id, s.src_ts20 AS source_value, v.ts20 AS transformed_value
 FROM cases c
-LEFT JOIN source_input s ON s.case_id = c.case_id
-LEFT JOIN transformed_view v ON v.case_id = c.case_id
+LEFT JOIN default.source_input s ON s.case_id = c.case_id
+LEFT JOIN default.transformed_view v ON v.case_id = c.case_id
 ORDER BY c.case_id;
 
 -- TS21: expected rows >= 6
@@ -193,7 +193,7 @@ WITH cases AS (
 )
 SELECT c.case_id, s.src_ts21 AS source_value, v.ts21 AS transformed_value
 FROM cases c
-LEFT JOIN source_input s ON s.case_id = c.case_id
-LEFT JOIN transformed_view v ON v.case_id = c.case_id
+LEFT JOIN default.source_input s ON s.case_id = c.case_id
+LEFT JOIN default.transformed_view v ON v.case_id = c.case_id
 ORDER BY c.case_id;
 

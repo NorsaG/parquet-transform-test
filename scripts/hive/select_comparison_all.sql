@@ -1,4 +1,4 @@
-USE transform_demo;
+-- USE default;
 
 SELECT
   case_id,
@@ -6,6 +6,6 @@ SELECT
   transformed_value,
   etalon_value,
   comparison_result
-FROM transformation_comparison_view
+FROM default.transformation_comparison_view
 ORDER BY case_id;
 

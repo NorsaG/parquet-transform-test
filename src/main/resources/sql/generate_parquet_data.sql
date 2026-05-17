@@ -1,8 +1,8 @@
-CREATE DATABASE IF NOT EXISTS transform_demo;
-USE transform_demo;
+-- Using default schema (no CREATE DATABASE required).
+-- USE default;
 
-DROP TABLE IF EXISTS source_input_seed;
-CREATE TABLE source_input_seed (
+DROP TABLE IF EXISTS default.source_input_seed;
+CREATE TABLE default.source_input_seed (
   src_ts1 DATE,
   src_ts2 INT,
   src_ts3 STRING,
@@ -27,7 +27,7 @@ CREATE TABLE source_input_seed (
 )
 STORED AS PARQUET;
 
-INSERT OVERWRITE TABLE source_input_seed VALUES
+INSERT OVERWRITE TABLE default.source_input_seed VALUES
 (DATE '2026-01-15', 120, '12345.678901234567', '2026-05-06 12:34:56.123456', '2026-05-06T12:34:56.123456789', '2026-05-06T12:34:56.123456+03:00', '999.99', '23:59:59.987654321', '9223372036854775806', 12.3456, 7.5, 456.789012, '2026-05-06T12:34:56.123456+05:00', '2026-05-06T12:34:56+03:00', '2026-05-06T12:34:56+03:00[Europe/Moscow]', '2026-05-06T09:34:56Z[UTC]', DATE '2024-02-29', '01:02:03.123456', 'com.demo.Type:value42', '[{"key":"k1","type":"TypeA"},{"key":"k2","type":"TypeB"}]', '[["123","12345",null],["abc","999","x"]]'),
 (DATE '0001-01-01', 1, '1.000000000001', '0001-01-01 00:00:00.000000', '0001-01-01T00:00:00.000000000', '0001-01-01T00:00:00.000000+00:00', '1.00', '00:00:00.000000000', '1', 1.0, 1.0, 1.0, '0001-01-01T00:00:00+00:00', '0001-01-01T00:00:00+00:00', '0001-01-01T00:00:00+00:00[UTC]', '0001-01-01T00:00:00Z[UTC]', DATE '0001-01-01', '00:00:00.000000000', 'case.boundary:min', '[]', '[["min","1",null]]'),
 (DATE '9999-12-31', 2, '2.000000000002', '9999-12-31 23:59:59.999999', '9999-12-31T23:59:59.999999999', '9999-12-31T23:59:59.999999+00:00', '2.00', '23:59:59.999999999', '2', 2.0, 2.0, 2.0, '9999-12-31T23:59:59.999999+00:00', '9999-12-31T23:59:59+00:00', '9999-12-31T23:59:59+00:00[UTC]', '9999-12-31T23:59:59Z[UTC]', DATE '9999-12-31', '23:59:59.999999999', 'case.boundary:max', '[]', '[["max","2",null]]'),

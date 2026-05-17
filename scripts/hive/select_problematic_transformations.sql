@@ -1,4 +1,4 @@
-USE transform_demo;
+-- USE default;
 
 SELECT
   case_id,
@@ -34,7 +34,7 @@ SELECT
     WHEN case_id = 'ts21_only_nulls' AND ts21 = 'null|null' THEN 'PASS'
     ELSE 'INFO'
   END AS ts21_check
-FROM transformed_view
+FROM default.transformed_view
 WHERE case_id IN (
   'ts9_overflow',
   'ts10_nan',

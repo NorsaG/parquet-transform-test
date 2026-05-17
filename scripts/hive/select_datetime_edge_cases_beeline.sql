@@ -1,5 +1,5 @@
 !set silent true;
-USE transform_demo;
+-- USE default;
 
 SELECT
   case_id,
@@ -56,7 +56,7 @@ SELECT
     WHEN case_id = 'ts18_invalid_hour' AND ts18 IS NULL THEN 'PASS_EXPECTED_NULL'
     ELSE 'INFO'
   END AS ts18_check
-FROM transformed_view
+FROM default.transformed_view
 WHERE case_id IN (
   'datetime_min_boundary',
   'datetime_max_boundary',

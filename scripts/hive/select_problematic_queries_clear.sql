@@ -1,4 +1,4 @@
-USE transform_demo;
+-- USE default;
 
 -- TS04
 WITH etalon AS (
@@ -21,8 +21,8 @@ SELECT
     ELSE 'NOT SAME'
   END AS comparison_result
 FROM etalon e
-LEFT JOIN source_input s ON s.case_id = e.case_id
-LEFT JOIN transformed_view v ON v.case_id = e.case_id
+LEFT JOIN default.source_input s ON s.case_id = e.case_id
+LEFT JOIN default.transformed_view v ON v.case_id = e.case_id
 ORDER BY e.case_id;
 
 -- TS05
@@ -46,8 +46,8 @@ SELECT
     ELSE 'NOT SAME'
   END AS comparison_result
 FROM etalon e
-LEFT JOIN source_input s ON s.case_id = e.case_id
-LEFT JOIN transformed_view v ON v.case_id = e.case_id
+LEFT JOIN default.source_input s ON s.case_id = e.case_id
+LEFT JOIN default.transformed_view v ON v.case_id = e.case_id
 ORDER BY e.case_id;
 
 -- TS06
@@ -71,8 +71,8 @@ SELECT
     ELSE 'NOT SAME'
   END AS comparison_result
 FROM etalon e
-LEFT JOIN source_input s ON s.case_id = e.case_id
-LEFT JOIN transformed_view v ON v.case_id = e.case_id
+LEFT JOIN default.source_input s ON s.case_id = e.case_id
+LEFT JOIN default.transformed_view v ON v.case_id = e.case_id
 ORDER BY e.case_id;
 
 -- TS09
@@ -94,8 +94,8 @@ SELECT
     ELSE 'NOT SAME'
   END AS comparison_result
 FROM etalon e
-LEFT JOIN source_input s ON s.case_id = e.case_id
-LEFT JOIN transformed_view v ON v.case_id = e.case_id
+LEFT JOIN default.source_input s ON s.case_id = e.case_id
+LEFT JOIN default.transformed_view v ON v.case_id = e.case_id
 ORDER BY e.case_id;
 
 -- TS10
@@ -117,8 +117,8 @@ SELECT
     ELSE 'NOT SAME'
   END AS comparison_result
 FROM etalon e
-LEFT JOIN source_input s ON s.case_id = e.case_id
-LEFT JOIN transformed_view v ON v.case_id = e.case_id
+LEFT JOIN default.source_input s ON s.case_id = e.case_id
+LEFT JOIN default.transformed_view v ON v.case_id = e.case_id
 ORDER BY e.case_id;
 
 -- TS12
@@ -140,8 +140,8 @@ SELECT
     ELSE 'NOT SAME'
   END AS comparison_result
 FROM etalon e
-LEFT JOIN source_input s ON s.case_id = e.case_id
-LEFT JOIN transformed_view v ON v.case_id = e.case_id
+LEFT JOIN default.source_input s ON s.case_id = e.case_id
+LEFT JOIN default.transformed_view v ON v.case_id = e.case_id
 ORDER BY e.case_id;
 
 -- TS13
@@ -163,8 +163,8 @@ SELECT
     ELSE 'NOT SAME'
   END AS comparison_result
 FROM etalon e
-LEFT JOIN source_input s ON s.case_id = e.case_id
-LEFT JOIN transformed_view v ON v.case_id = e.case_id
+LEFT JOIN default.source_input s ON s.case_id = e.case_id
+LEFT JOIN default.transformed_view v ON v.case_id = e.case_id
 ORDER BY e.case_id;
 
 -- TS14
@@ -186,8 +186,8 @@ SELECT
     ELSE 'NOT SAME'
   END AS comparison_result
 FROM etalon e
-LEFT JOIN source_input s ON s.case_id = e.case_id
-LEFT JOIN transformed_view v ON v.case_id = e.case_id
+LEFT JOIN default.source_input s ON s.case_id = e.case_id
+LEFT JOIN default.transformed_view v ON v.case_id = e.case_id
 ORDER BY e.case_id;
 
 -- TS15
@@ -210,8 +210,8 @@ SELECT
     ELSE 'NOT SAME'
   END AS comparison_result
 FROM etalon e
-LEFT JOIN source_input s ON s.case_id = e.case_id
-LEFT JOIN transformed_view v ON v.case_id = e.case_id
+LEFT JOIN default.source_input s ON s.case_id = e.case_id
+LEFT JOIN default.transformed_view v ON v.case_id = e.case_id
 ORDER BY e.case_id;
 
 -- TS16
@@ -233,8 +233,8 @@ SELECT
     ELSE 'NOT SAME'
   END AS comparison_result
 FROM etalon e
-LEFT JOIN source_input s ON s.case_id = e.case_id
-LEFT JOIN transformed_view v ON v.case_id = e.case_id
+LEFT JOIN default.source_input s ON s.case_id = e.case_id
+LEFT JOIN default.transformed_view v ON v.case_id = e.case_id
 ORDER BY e.case_id;
 
 -- TS18
@@ -257,8 +257,8 @@ SELECT
     ELSE 'NOT SAME'
   END AS comparison_result
 FROM etalon e
-LEFT JOIN source_input s ON s.case_id = e.case_id
-LEFT JOIN transformed_view v ON v.case_id = e.case_id
+LEFT JOIN default.source_input s ON s.case_id = e.case_id
+LEFT JOIN default.transformed_view v ON v.case_id = e.case_id
 ORDER BY e.case_id;
 
 -- TS19
@@ -280,8 +280,8 @@ SELECT
     ELSE 'NOT SAME'
   END AS comparison_result
 FROM etalon e
-LEFT JOIN source_input s ON s.case_id = e.case_id
-LEFT JOIN transformed_view v ON v.case_id = e.case_id
+LEFT JOIN default.source_input s ON s.case_id = e.case_id
+LEFT JOIN default.transformed_view v ON v.case_id = e.case_id
 ORDER BY e.case_id;
 
 -- TS20 (regex etalon because timestamp part is dynamic)
@@ -305,8 +305,8 @@ SELECT
     ELSE 'NOT SAME'
   END AS comparison_result
 FROM etalon e
-LEFT JOIN source_input s ON s.case_id = e.case_id
-LEFT JOIN transformed_view v ON v.case_id = e.case_id
+LEFT JOIN default.source_input s ON s.case_id = e.case_id
+LEFT JOIN default.transformed_view v ON v.case_id = e.case_id
 ORDER BY e.case_id;
 
 -- TS21
@@ -329,8 +329,8 @@ SELECT
     ELSE 'NOT SAME'
   END AS comparison_result
 FROM etalon e
-LEFT JOIN source_input s ON s.case_id = e.case_id
-LEFT JOIN transformed_view v ON v.case_id = e.case_id
+LEFT JOIN default.source_input s ON s.case_id = e.case_id
+LEFT JOIN default.transformed_view v ON v.case_id = e.case_id
 ORDER BY e.case_id;
 
 
