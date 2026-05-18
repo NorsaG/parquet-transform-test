@@ -368,23 +368,42 @@ val transformedViewSql = """
       ELSE NULL
     END AS ts19,
 
-    -- TS20
+    -- TS20 (Hive-compatible без TRANSFORM/lambda)
     CASE
       WHEN src_ts20 IS NULL THEN NULL
       WHEN TRIM(src_ts20) = '' THEN ''
+      WHEN TRIM(src_ts20) = '[]' THEN ''
       WHEN NOT (TRIM(src_ts20) LIKE '[%' AND TRIM(src_ts20) LIKE '%]') THEN NULL
-      WHEN FROM_JSON(src_ts20, 'array<struct<key:string,type:string>>') IS NULL THEN NULL
-      ELSE CONCAT_WS(
-        ';',
-        TRANSFORM(
-          FROM_JSON(src_ts20, 'array<struct<key:string,type:string>>'),
-          x -> CASE
-            WHEN COALESCE(x.type, '') <> ''
-              THEN CONCAT(COALESCE(x.key, ''), ':', x.type, '|', CAST(CAST(UNIX_TIMESTAMP(CURRENT_TIMESTAMP()) AS BIGINT) * 1000 AS STRING), ':I')
-            ELSE CONCAT(COALESCE(x.key, ''), ':', CAST(CAST(UNIX_TIMESTAMP(CURRENT_TIMESTAMP()) AS BIGINT) * 1000 AS STRING), ':I')
-          END
+      ELSE
+        REGEXP_REPLACE(
+          REGEXP_REPLACE(
+            REGEXP_REPLACE(
+              REGEXP_REPLACE(
+                REGEXP_REPLACE(
+                  REGEXP_REPLACE(
+                    REGEXP_REPLACE(
+                      SUBSTR(TRIM(src_ts20), 2, LENGTH(TRIM(src_ts20)) - 2),
+                      '\\}\\s*,\\s*\\{',
+                      ';'
+                    ),
+                    '[\\{\\}"\\s]',
+                    ''
+                  ),
+                  'key:([^,;]*),type:([^;]*)',
+                  CONCAT('$1:$2|', CAST(CAST(UNIX_TIMESTAMP(CURRENT_TIMESTAMP()) AS BIGINT) * 1000 AS STRING), ':I')
+                ),
+                ':\\|',
+                ':'
+              ),
+              ';key:([^;]+)',
+              CONCAT(';$1:', CAST(CAST(UNIX_TIMESTAMP(CURRENT_TIMESTAMP()) AS BIGINT) * 1000 AS STRING), ':I')
+            ),
+            '^key:([^;]+)',
+            CONCAT('$1:', CAST(CAST(UNIX_TIMESTAMP(CURRENT_TIMESTAMP()) AS BIGINT) * 1000 AS STRING), ':I')
+          ),
+          '(^|;)type:[^;]*',
+          '$1'
         )
-      )
     END AS ts20,
 
     -- TS21 (Hive-compatible without Spark lambda/json transform)
