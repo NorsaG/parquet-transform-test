@@ -206,7 +206,9 @@ val transformedViewSql = """
     -- TS5: strict yyyy-MM-ddTHH:mm:ss.SSSSSSSSS -> yyyy-MM-dd HH:mm:ss.SSSSSS
     CASE
       WHEN src_ts5 IS NULL OR TRIM(src_ts5) = '' THEN NULL
-      WHEN TRIM(src_ts5) RLIKE '^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{9}$'
+      WHEN TRIM(src_ts5) RLIKE '^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]\.[0-9]{9}$'
+           AND TO_DATE(SUBSTR(TRIM(src_ts5),1,10)) IS NOT NULL
+           AND DATE_FORMAT(TO_DATE(SUBSTR(TRIM(src_ts5),1,10)), 'yyyy-MM-dd') = SUBSTR(TRIM(src_ts5),1,10)
            AND UNIX_TIMESTAMP(CONCAT(SUBSTR(TRIM(src_ts5),1,10), ' ', SUBSTR(TRIM(src_ts5),12,8)), 'yyyy-MM-dd HH:mm:ss') IS NOT NULL
         THEN CONCAT(SUBSTR(TRIM(src_ts5), 1, 10), ' ', SUBSTR(TRIM(src_ts5), 12, 8), '.', SUBSTR(TRIM(src_ts5), 21, 6))
       ELSE NULL
@@ -262,28 +264,60 @@ val transformedViewSql = """
     -- TS13: strict offset datetime to local string micros
     CASE
       WHEN src_ts13 IS NULL OR TRIM(src_ts13) = '' THEN NULL
-      WHEN TRIM(src_ts13) RLIKE '^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{9}(Z|[+-][0-9]{2}:?[0-9]{2})$'
+      WHEN TRIM(src_ts13) RLIKE '^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]\.[0-9]{9}(Z|[+-][0-9]{2}:?[0-9]{2})$'
+           AND TO_DATE(SUBSTR(TRIM(src_ts13),1,10)) IS NOT NULL
+           AND DATE_FORMAT(TO_DATE(SUBSTR(TRIM(src_ts13),1,10)), 'yyyy-MM-dd') = SUBSTR(TRIM(src_ts13),1,10)
            AND UNIX_TIMESTAMP(CONCAT(SUBSTR(TRIM(src_ts13),1,10), ' ', SUBSTR(TRIM(src_ts13),12,8)), 'yyyy-MM-dd HH:mm:ss') IS NOT NULL
         THEN CONCAT(SUBSTR(TRIM(src_ts13),1,10), ' ', SUBSTR(TRIM(src_ts13),12,8), '.', SUBSTR(TRIM(src_ts13),21,6))
       ELSE NULL
     END AS ts13,
 
-    -- TS14: strict offset datetime to UTC string micros
+    -- TS14: strict offset datetime to UTC string micros (без unix_timestamp c микросекундами для Hive)
     CASE
       WHEN src_ts14 IS NULL OR TRIM(src_ts14) = '' THEN NULL
-      WHEN TRIM(src_ts14) RLIKE '^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{9}(Z|[+-][0-9]{2}:?[0-9]{2})$'
-           AND UNIX_TIMESTAMP(CONCAT(SUBSTR(TRIM(src_ts14),1,10), ' ', SUBSTR(TRIM(src_ts14),12,8), '.', SUBSTR(TRIM(src_ts14),21,6)), 'yyyy-MM-dd HH:mm:ss.SSSSSS') IS NOT NULL
-        THEN DATE_FORMAT(
-          TO_UTC_TIMESTAMP(
-            CAST(FROM_UNIXTIME(UNIX_TIMESTAMP(CONCAT(SUBSTR(TRIM(src_ts14),1,10), ' ', SUBSTR(TRIM(src_ts14),12,8), '.', SUBSTR(TRIM(src_ts14),21,6)), 'yyyy-MM-dd HH:mm:ss.SSSSSS')) AS TIMESTAMP),
-            CASE
-              WHEN REGEXP_EXTRACT(TRIM(src_ts14), '(Z|[+-][0-9]{2}:?[0-9]{2})$', 1) = 'Z' THEN '+00:00'
-              WHEN REGEXP_EXTRACT(TRIM(src_ts14), '(Z|[+-][0-9]{2}:?[0-9]{2})$', 1) RLIKE '^[+-][0-9]{4}$'
-                THEN REGEXP_REPLACE(REGEXP_EXTRACT(TRIM(src_ts14), '(Z|[+-][0-9]{2}:?[0-9]{2})$', 1), '^([+-][0-9]{2})([0-9]{2})$', '$1:$2')
-              ELSE REGEXP_EXTRACT(TRIM(src_ts14), '(Z|[+-][0-9]{2}:?[0-9]{2})$', 1)
-            END
+      WHEN TRIM(src_ts14) RLIKE '^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]\.[0-9]{9}(Z|[+-][0-9]{2}:?[0-9]{2})$'
+           AND TO_DATE(SUBSTR(TRIM(src_ts14),1,10)) IS NOT NULL
+           AND DATE_FORMAT(TO_DATE(SUBSTR(TRIM(src_ts14),1,10)), 'yyyy-MM-dd') = SUBSTR(TRIM(src_ts14),1,10)
+           AND UNIX_TIMESTAMP(CONCAT(SUBSTR(TRIM(src_ts14),1,10), ' ', SUBSTR(TRIM(src_ts14),12,8)), 'yyyy-MM-dd HH:mm:ss') IS NOT NULL
+        THEN CONCAT(
+          FROM_UNIXTIME(
+            CAST(UNIX_TIMESTAMP(CONCAT(SUBSTR(TRIM(src_ts14),1,10), ' ', SUBSTR(TRIM(src_ts14),12,8)), 'yyyy-MM-dd HH:mm:ss') AS BIGINT)
+            - CASE
+                WHEN REGEXP_EXTRACT(TRIM(src_ts14), '(Z|[+-][0-9]{2}:?[0-9]{2})$', 1) = 'Z' THEN 0
+                ELSE
+                  (CASE WHEN SUBSTR(
+                    CASE
+                      WHEN REGEXP_EXTRACT(TRIM(src_ts14), '(Z|[+-][0-9]{2}:?[0-9]{2})$', 1) RLIKE '^[+-][0-9]{4}$'
+                        THEN REGEXP_REPLACE(REGEXP_EXTRACT(TRIM(src_ts14), '(Z|[+-][0-9]{2}:?[0-9]{2})$', 1), '^([+-][0-9]{2})([0-9]{2})$', '$1:$2')
+                      ELSE REGEXP_EXTRACT(TRIM(src_ts14), '(Z|[+-][0-9]{2}:?[0-9]{2})$', 1)
+                    END,
+                    1,
+                    1
+                  ) = '-' THEN -1 ELSE 1 END)
+                  * (
+                    CAST(SUBSTR(
+                      CASE
+                        WHEN REGEXP_EXTRACT(TRIM(src_ts14), '(Z|[+-][0-9]{2}:?[0-9]{2})$', 1) RLIKE '^[+-][0-9]{4}$'
+                          THEN REGEXP_REPLACE(REGEXP_EXTRACT(TRIM(src_ts14), '(Z|[+-][0-9]{2}:?[0-9]{2})$', 1), '^([+-][0-9]{2})([0-9]{2})$', '$1:$2')
+                        ELSE REGEXP_EXTRACT(TRIM(src_ts14), '(Z|[+-][0-9]{2}:?[0-9]{2})$', 1)
+                      END,
+                      2,
+                      2
+                    ) AS INT) * 3600
+                    + CAST(SUBSTR(
+                      CASE
+                        WHEN REGEXP_EXTRACT(TRIM(src_ts14), '(Z|[+-][0-9]{2}:?[0-9]{2})$', 1) RLIKE '^[+-][0-9]{4}$'
+                          THEN REGEXP_REPLACE(REGEXP_EXTRACT(TRIM(src_ts14), '(Z|[+-][0-9]{2}:?[0-9]{2})$', 1), '^([+-][0-9]{2})([0-9]{2})$', '$1:$2')
+                        ELSE REGEXP_EXTRACT(TRIM(src_ts14), '(Z|[+-][0-9]{2}:?[0-9]{2})$', 1)
+                      END,
+                      5,
+                      2
+                    ) AS INT) * 60
+                  )
+              END,
+            'yyyy-MM-dd HH:mm:ss'
           ),
-          'yyyy-MM-dd HH:mm:ss.SSSSSS'
+          '.000000'
         )
       ELSE NULL
     END AS ts14,
@@ -293,42 +327,72 @@ val transformedViewSql = """
       WHEN src_ts15 IS NULL OR TRIM(src_ts15) = '' THEN NULL
       WHEN TRIM(src_ts15) RLIKE '^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{9}Z$'
         THEN CONCAT(SUBSTR(TRIM(src_ts15),1,10), ' ', SUBSTR(TRIM(src_ts15),12,8), '.', SUBSTR(TRIM(src_ts15),21,6))
-      WHEN TRIM(src_ts15) LIKE '%[%' AND TRIM(src_ts15) RLIKE '\\[[^\\]]+\\]$'
-           AND LOWER(TRIM(src_ts15)) NOT LIKE '%[mars/base]%'
-           AND TRIM(src_ts15) RLIKE '.*T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{9}.*'
+      WHEN TRIM(src_ts15) LIKE '%[%' AND TRIM(src_ts15) LIKE '%]'
+           AND TO_DATE(SUBSTR(TRIM(src_ts15),1,10)) IS NOT NULL
+           AND DATE_FORMAT(TO_DATE(SUBSTR(TRIM(src_ts15),1,10)), 'yyyy-MM-dd') = SUBSTR(TRIM(src_ts15),1,10)
+           AND TRIM(src_ts15) RLIKE '.*T[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{9}.*'
            AND REGEXP_EXTRACT(TRIM(src_ts15), '(Z|[+-][0-9]{2}:[0-9]{2})', 1) <> ''
-        THEN DATE_FORMAT(
-          FROM_UTC_TIMESTAMP(
-            TO_UTC_TIMESTAMP(
-              CAST(FROM_UNIXTIME(UNIX_TIMESTAMP(CONCAT(SUBSTR(TRIM(src_ts15),1,10), ' ', SUBSTR(TRIM(src_ts15),12,8), '.', SUBSTR(TRIM(src_ts15),21,6)), 'yyyy-MM-dd HH:mm:ss.SSSSSS')) AS TIMESTAMP),
-              CASE
-                WHEN REGEXP_EXTRACT(TRIM(src_ts15), '(Z|[+-][0-9]{2}:[0-9]{2})', 1) = 'Z' THEN '+00:00'
-                ELSE REGEXP_EXTRACT(TRIM(src_ts15), '(Z|[+-][0-9]{2}:[0-9]{2})', 1)
-              END
+           AND INSTR(TRIM(src_ts15), '[') > 0
+           AND INSTR(TRIM(src_ts15), ']') > INSTR(TRIM(src_ts15), '[')
+           AND LOWER(SUBSTR(TRIM(src_ts15), INSTR(TRIM(src_ts15), '[') + 1, INSTR(TRIM(src_ts15), ']') - INSTR(TRIM(src_ts15), '[') - 1)) <> 'mars/base'
+           AND UNIX_TIMESTAMP(CONCAT(SUBSTR(TRIM(src_ts15),1,10), ' ', SUBSTR(TRIM(src_ts15),12,8)), 'yyyy-MM-dd HH:mm:ss') IS NOT NULL
+        THEN CASE
+          WHEN INSTR(TRIM(src_ts15), '[') <= 0 OR INSTR(TRIM(src_ts15), ']') <= INSTR(TRIM(src_ts15), '[') THEN NULL
+          ELSE CONCAT(
+            DATE_FORMAT(
+              FROM_UTC_TIMESTAMP(
+                CAST(
+                  FROM_UNIXTIME(
+                    CAST(UNIX_TIMESTAMP(CONCAT(SUBSTR(TRIM(src_ts15),1,10), ' ', SUBSTR(TRIM(src_ts15),12,8)), 'yyyy-MM-dd HH:mm:ss') AS BIGINT)
+                    - CASE
+                        WHEN REGEXP_EXTRACT(TRIM(src_ts15), '(Z|[+-][0-9]{2}:[0-9]{2})', 1) = 'Z' THEN 0
+                        ELSE
+                          (CASE WHEN SUBSTR(REGEXP_EXTRACT(TRIM(src_ts15), '(Z|[+-][0-9]{2}:[0-9]{2})', 1),1,1) = '-' THEN -1 ELSE 1 END)
+                          * (
+                            CAST(SUBSTR(REGEXP_EXTRACT(TRIM(src_ts15), '(Z|[+-][0-9]{2}:[0-9]{2})', 1),2,2) AS INT) * 3600
+                            + CAST(SUBSTR(REGEXP_EXTRACT(TRIM(src_ts15), '(Z|[+-][0-9]{2}:[0-9]{2})', 1),5,2) AS INT) * 60
+                          )
+                      END,
+                    'yyyy-MM-dd HH:mm:ss'
+                  ) AS TIMESTAMP
+                ),
+                SUBSTR(TRIM(src_ts15), INSTR(TRIM(src_ts15), '[') + 1, INSTR(TRIM(src_ts15), ']') - INSTR(TRIM(src_ts15), '[') - 1)
+              ),
+              'yyyy-MM-dd HH:mm:ss'
             ),
-            REGEXP_EXTRACT(TRIM(src_ts15), '\\[(.+)\\]$', 1)
-          ),
-          'yyyy-MM-dd HH:mm:ss.SSSSSS'
-        )
+            '.000000'
+          )
+        END
       ELSE NULL
     END AS ts15,
 
     -- TS16: zoned datetime to UTC with micros
     CASE
       WHEN src_ts16 IS NULL OR TRIM(src_ts16) = '' THEN NULL
-      WHEN TRIM(src_ts16) LIKE '%[%' AND TRIM(src_ts16) RLIKE '\\[[^\\]]+\\]$'
-           AND LOWER(TRIM(src_ts16)) NOT LIKE '%[mars/base]%'
-           AND TRIM(src_ts16) RLIKE '.*T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{9}.*'
+      WHEN TRIM(src_ts16) LIKE '%[%' AND TRIM(src_ts16) LIKE '%]'
+           AND TO_DATE(SUBSTR(TRIM(src_ts16),1,10)) IS NOT NULL
+           AND DATE_FORMAT(TO_DATE(SUBSTR(TRIM(src_ts16),1,10)), 'yyyy-MM-dd') = SUBSTR(TRIM(src_ts16),1,10)
+           AND TRIM(src_ts16) RLIKE '.*T[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{9}.*'
            AND REGEXP_EXTRACT(TRIM(src_ts16), '(Z|[+-][0-9]{2}:[0-9]{2})', 1) <> ''
-        THEN DATE_FORMAT(
-          TO_UTC_TIMESTAMP(
-            CAST(FROM_UNIXTIME(UNIX_TIMESTAMP(CONCAT(SUBSTR(TRIM(src_ts16),1,10), ' ', SUBSTR(TRIM(src_ts16),12,8), '.', SUBSTR(TRIM(src_ts16),21,6)), 'yyyy-MM-dd HH:mm:ss.SSSSSS')) AS TIMESTAMP),
-            CASE
-              WHEN REGEXP_EXTRACT(TRIM(src_ts16), '(Z|[+-][0-9]{2}:[0-9]{2})', 1) = 'Z' THEN '+00:00'
-              ELSE REGEXP_EXTRACT(TRIM(src_ts16), '(Z|[+-][0-9]{2}:[0-9]{2})', 1)
-            END
+           AND INSTR(TRIM(src_ts16), '[') > 0
+           AND INSTR(TRIM(src_ts16), ']') > INSTR(TRIM(src_ts16), '[')
+           AND LOWER(SUBSTR(TRIM(src_ts16), INSTR(TRIM(src_ts16), '[') + 1, INSTR(TRIM(src_ts16), ']') - INSTR(TRIM(src_ts16), '[') - 1)) <> 'mars/base'
+           AND UNIX_TIMESTAMP(CONCAT(SUBSTR(TRIM(src_ts16),1,10), ' ', SUBSTR(TRIM(src_ts16),12,8)), 'yyyy-MM-dd HH:mm:ss') IS NOT NULL
+        THEN CONCAT(
+          FROM_UNIXTIME(
+            CAST(UNIX_TIMESTAMP(CONCAT(SUBSTR(TRIM(src_ts16),1,10), ' ', SUBSTR(TRIM(src_ts16),12,8)), 'yyyy-MM-dd HH:mm:ss') AS BIGINT)
+            - CASE
+                WHEN REGEXP_EXTRACT(TRIM(src_ts16), '(Z|[+-][0-9]{2}:[0-9]{2})', 1) = 'Z' THEN 0
+                ELSE
+                  (CASE WHEN SUBSTR(REGEXP_EXTRACT(TRIM(src_ts16), '(Z|[+-][0-9]{2}:[0-9]{2})', 1),1,1) = '-' THEN -1 ELSE 1 END)
+                  * (
+                    CAST(SUBSTR(REGEXP_EXTRACT(TRIM(src_ts16), '(Z|[+-][0-9]{2}:[0-9]{2})', 1),2,2) AS INT) * 3600
+                    + CAST(SUBSTR(REGEXP_EXTRACT(TRIM(src_ts16), '(Z|[+-][0-9]{2}:[0-9]{2})', 1),5,2) AS INT) * 60
+                  )
+              END,
+            'yyyy-MM-dd HH:mm:ss'
           ),
-          'yyyy-MM-dd HH:mm:ss.SSSSSS'
+          '.000000'
         )
       ELSE NULL
     END AS ts16,
@@ -531,6 +595,11 @@ spark.sql("""
           WHEN REGEXP_REPLACE(REGEXP_REPLACE(transformed_value, '\\|[0-9]+:I', '|<ts>:I'), ':[0-9]+:I', ':<ts>:I')
              <=> REGEXP_REPLACE(REGEXP_REPLACE(etalon_value, '\\|[0-9]+:I', '|<ts>:I'), ':[0-9]+:I', ':<ts>:I')
             THEN 'SAME'
+          ELSE 'NOT SAME'
+        END
+      WHEN transformation IN ('ts10', 'ts12') THEN
+        CASE
+          WHEN CAST(transformed_value AS DECIMAL(38,12)) <=> CAST(etalon_value AS DECIMAL(38,12)) THEN 'SAME'
           ELSE 'NOT SAME'
         END
       ELSE CASE WHEN transformed_value <=> etalon_value THEN 'SAME' ELSE 'NOT SAME' END
