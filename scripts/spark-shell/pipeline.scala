@@ -317,7 +317,8 @@ val transformedViewSql = """
               END,
             'yyyy-MM-dd HH:mm:ss'
           ),
-          '.000000'
+          '.',
+          SUBSTR(TRIM(src_ts14), 21, 6)
         )
       ELSE NULL
     END AS ts14,
@@ -360,7 +361,8 @@ val transformedViewSql = """
               ),
               'yyyy-MM-dd HH:mm:ss'
             ),
-            '.000000'
+            '.',
+            SUBSTR(TRIM(src_ts15), 21, 6)
           )
         END
       ELSE NULL
@@ -392,7 +394,8 @@ val transformedViewSql = """
               END,
             'yyyy-MM-dd HH:mm:ss'
           ),
-          '.000000'
+          '.',
+          SUBSTR(TRIM(src_ts16), 21, 6)
         )
       ELSE NULL
     END AS ts16,
@@ -438,6 +441,8 @@ val transformedViewSql = """
       WHEN TRIM(src_ts20) = '' THEN ''
       WHEN TRIM(src_ts20) = '[]' THEN ''
       WHEN NOT (TRIM(src_ts20) LIKE '[%' AND TRIM(src_ts20) LIKE '%]') THEN NULL
+      WHEN LOWER(TRIM(src_ts20)) NOT LIKE '%"key"%' AND LOWER(TRIM(src_ts20)) NOT LIKE '%"type"%'
+        THEN CONCAT('::', CAST(CAST(UNIX_TIMESTAMP(CURRENT_TIMESTAMP()) AS BIGINT) * 1000 AS STRING), ':I')
       ELSE
         REGEXP_REPLACE(
           REGEXP_REPLACE(
@@ -456,7 +461,7 @@ val transformedViewSql = """
                   'key:([^,;]*),type:([^;]*)',
                   CONCAT('$1:$2|', CAST(CAST(UNIX_TIMESTAMP(CURRENT_TIMESTAMP()) AS BIGINT) * 1000 AS STRING), ':I')
                 ),
-                ':\\|',
+                ':',
                 ':'
               ),
               ';key:([^;]+)',
