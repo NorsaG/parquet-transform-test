@@ -119,7 +119,7 @@ val loadedRows = Source.fromFile(generatedCasesPath).getLines().filter(_.trim.no
 }
 
 val sourceRows = loadedRows
-require(sourceRows.size == 233, s"Expected 233 rows from FieldMutationTests cases, got ${sourceRows.size}")
+require(sourceRows.size == 234, s"Expected 234 rows from FieldMutationTests cases, got ${sourceRows.size}")
 
 case class EtalonOverride(case_id: String, compare_mode: String, etalon_value: String)
 
@@ -224,10 +224,10 @@ val transformedViewSql = """
           SUBSTR(REGEXP_EXTRACT(TRIM(src_ts6), '^[0-9]{4}-[0-9]{2}-[0-9]{2}[T ][0-9]{2}:[0-9]{2}:[0-9]{2}\\.([0-9]{9})', 1), 1, 6),
           REGEXP_REPLACE(
             REGEXP_REPLACE(
-              REGEXP_REPLACE(
+            CONCAT(';$1::', CAST(CAST(UNIX_TIMESTAMP(CURRENT_TIMESTAMP()) AS BIGINT) * 1000 AS STRING), ':I')
                 CASE
                   WHEN REGEXP_EXTRACT(TRIM(src_ts6), '(Z|[+-]\\d{2}:?\\d{2})', 1) = ''
-                    THEN CASE WHEN TRIM(src_ts6) LIKE '%Europe/Moscow%' THEN '+03' ELSE '+00' END
+          CONCAT('$1::', CAST(CAST(UNIX_TIMESTAMP(CURRENT_TIMESTAMP()) AS BIGINT) * 1000 AS STRING), ':I')
                   ELSE REGEXP_REPLACE(REGEXP_EXTRACT(TRIM(src_ts6), '(Z|[+-]\\d{2}:?\\d{2})', 1), '^Z$', '+00')
                 END,
                 '^([+-]\\d{2})(\\d{2})$', '$1:$2'
@@ -447,7 +447,7 @@ val transformedViewSql = """
         REGEXP_REPLACE(
           REGEXP_REPLACE(
             REGEXP_REPLACE(
-              REGEXP_REPLACE(
+              REPLACE(
                 REGEXP_REPLACE(
                   REGEXP_REPLACE(
                     REGEXP_REPLACE(
@@ -461,14 +461,14 @@ val transformedViewSql = """
                   'key:([^,;]*),type:([^;]*)',
                   CONCAT('$1:$2|', CAST(CAST(UNIX_TIMESTAMP(CURRENT_TIMESTAMP()) AS BIGINT) * 1000 AS STRING), ':I')
                 ),
-                ':',
-                ':'
+                ':|',
+                '::'
               ),
               ';key:([^;]+)',
-              CONCAT(';$1:', CAST(CAST(UNIX_TIMESTAMP(CURRENT_TIMESTAMP()) AS BIGINT) * 1000 AS STRING), ':I')
+              CONCAT(';$1::', CAST(CAST(UNIX_TIMESTAMP(CURRENT_TIMESTAMP()) AS BIGINT) * 1000 AS STRING), ':I')
             ),
             '^key:([^;]+)',
-            CONCAT('$1:', CAST(CAST(UNIX_TIMESTAMP(CURRENT_TIMESTAMP()) AS BIGINT) * 1000 AS STRING), ':I')
+            CONCAT('$1::', CAST(CAST(UNIX_TIMESTAMP(CURRENT_TIMESTAMP()) AS BIGINT) * 1000 AS STRING), ':I')
           ),
           '(^|;)type:[^;]*',
           '$1'
