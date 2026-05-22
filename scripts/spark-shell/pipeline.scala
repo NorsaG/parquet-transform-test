@@ -447,39 +447,26 @@ val transformedViewSql = """
                   REGEXP_REPLACE(
                     REGEXP_REPLACE(
                       REGEXP_REPLACE(
-                        REGEXP_REPLACE(
-                          REGEXP_REPLACE(
-                            REGEXP_REPLACE(
-                              REGEXP_REPLACE(
-                                SUBSTR(TRIM(src_ts20), 2, LENGTH(TRIM(src_ts20)) - 2),
-                                '\\}\\s*,\\s*\\{',
-                                ';'
-                              ),
-                              '[\\{\\}"\\s]',
-                              ''
-                            ),
-                            'key:([^,;]*),type:([^,;]*)',
-                            CONCAT('$1:$2|', CAST(CAST(UNIX_TIMESTAMP(CURRENT_TIMESTAMP()) AS BIGINT) * 1000 AS STRING), ':I')
-                          ),
-                          'type:([^,;]*),key:([^,;]*)',
-                          CONCAT('$2:$1|', CAST(CAST(UNIX_TIMESTAMP(CURRENT_TIMESTAMP()) AS BIGINT) * 1000 AS STRING), ':I')
-                        ),
-                        ',[^;]*',
-                        ''
+                        SUBSTR(TRIM(src_ts20), 2, LENGTH(TRIM(src_ts20)) - 2),
+                        '\\}\\s*,\\s*\\{',
+                        ';'
                       ),
-                      ',{2,}',
-                      ','
+                      '[\\{\\}"\\s]',
+                      ''
                     ),
-                    '(^|;),',
-                    '$1'
+                    'key:([^,;]*),type:([^,;]*)(,[^;]*)?',
+                    CONCAT('$1:$2|', CAST(CAST(UNIX_TIMESTAMP(CURRENT_TIMESTAMP()) AS BIGINT) * 1000 AS STRING), ':I')
+                  ),
+                  'type:([^,;]*),key:([^,;]*)(,[^;]*)?',
+                  CONCAT('$2:$1|', CAST(CAST(UNIX_TIMESTAMP(CURRENT_TIMESTAMP()) AS BIGINT) * 1000 AS STRING), ':I')
                 ),
                 ':|',
                 '::'
               ),
-              ';key:([^;]+)',
+              ';key:([^,;]+)(,[^;]*)?',
               CONCAT(';$1::', CAST(CAST(UNIX_TIMESTAMP(CURRENT_TIMESTAMP()) AS BIGINT) * 1000 AS STRING), ':I')
             ),
-            '^key:([^;]+)',
+            '^key:([^,;]+)(,[^;]*)?',
             CONCAT('$1::', CAST(CAST(UNIX_TIMESTAMP(CURRENT_TIMESTAMP()) AS BIGINT) * 1000 AS STRING), ':I')
           ),
           '(^|;)type:[^;]*',
