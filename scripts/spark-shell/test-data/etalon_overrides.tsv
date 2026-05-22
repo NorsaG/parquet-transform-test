@@ -90,6 +90,7 @@ TS20|text|ERROR|<NULL>
 TS20|number|ERROR|<NULL>
 TS20|missing_keys|EXACT|::<ts>:I
 TS20|key_no_type|EXACT|k2::<ts>:I
+TS20|extra_fields|EXACT|k1:T1|<ts>:I
 TS21|standard|EXACT|123|12345
 TS21|with_null|EXACT|123|12345|null
 TS21|only_nulls|EXACT|null|null
