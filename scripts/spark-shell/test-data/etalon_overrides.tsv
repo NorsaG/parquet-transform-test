@@ -1,7 +1,7 @@
 ﻿# transformation|case_name|mode|etalon_value
-TS04|normal|EXACT|2024-05-20 10:15:30.123456
-TS04|midnight|EXACT|2024-01-01 00:00:00
-TS04|zero_micros|EXACT|2024-05-20 10:15:30
+TS04|normal|EXACT|2024-05-20 13:15:30.123456
+TS04|midnight|EXACT|2024-01-01 03:00:00
+TS04|zero_micros|EXACT|2024-05-20 13:15:30
 TS04|null|EXACT|<NULL>
 TS04|invalid_format|ERROR|<NULL>
 TS05|standard|EXACT|2024-05-20 10:15:30.123456
@@ -31,7 +31,7 @@ TS06|offset_0000|EXACT|2026-04-13 13:42:43.271025+00
 TS06|offset_neg_0700|EXACT|2026-04-13 13:42:43.271025-07
 TS06|offset_0530|EXACT|2026-04-13 13:42:43.271025+05:30
 TS06|zone_only_moscow|EXACT|2026-04-13 13:42:43.271025+03
-TS06|short_frac_6|EXACT|<NULL>
+TS06|short_frac_6|EXACT|2026-04-13 13:42:43.271025+03
 TS09|simple|EXACT|123
 TS09|negative|EXACT|-456
 TS09|max_long|EXACT|9223372036854775807
@@ -88,6 +88,8 @@ TS20|not_array|ERROR|<NULL>
 TS20|invalid_json|ERROR|<NULL>
 TS20|text|ERROR|<NULL>
 TS20|number|ERROR|<NULL>
+TS20|missing_keys|EXACT|::<ts>:I
+TS20|key_no_type|EXACT|k2::<ts>:I
 TS21|standard|EXACT|123|12345
 TS21|with_null|EXACT|123|12345|null
 TS21|only_nulls|EXACT|null|null

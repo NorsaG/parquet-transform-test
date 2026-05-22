@@ -195,11 +195,14 @@ val transformedViewSql = """
     CAST(src_ts2 AS SMALLINT) AS ts2,
     CAST(src_ts3 AS DECIMAL(38,12)) AS ts3,
 
-    -- TS4: strict yyyy-MM-ddTHH:mm:ss.SSSSSSSSS -> timestamp (microseconds)
+    -- TS4: strict yyyy-MM-ddTHH:mm:ss.SSSSSSSSS -> timestamp in Europe/Moscow (source interpreted as UTC)
     CASE
       WHEN src_ts4 IS NULL OR TRIM(src_ts4) = '' THEN NULL
       WHEN TRIM(src_ts4) RLIKE '^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{9}$'
-        THEN CAST(CONCAT(SUBSTR(TRIM(src_ts4), 1, 10), ' ', SUBSTR(TRIM(src_ts4), 12, 8), '.', SUBSTR(TRIM(src_ts4), 21, 6)) AS TIMESTAMP)
+        THEN FROM_UTC_TIMESTAMP(
+          CAST(CONCAT(SUBSTR(TRIM(src_ts4), 1, 10), ' ', SUBSTR(TRIM(src_ts4), 12, 8), '.', SUBSTR(TRIM(src_ts4), 21, 6)) AS TIMESTAMP),
+          'Europe/Moscow'
+        )
       ELSE NULL
     END AS ts4,
 
@@ -217,24 +220,23 @@ val transformedViewSql = """
     -- TS6
     CASE
       WHEN src_ts6 IS NULL OR TRIM(src_ts6) = '' THEN NULL
-      WHEN TRIM(src_ts6) RLIKE '^[0-9]{4}-[0-9]{2}-[0-9]{2}[T ][0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{9}.*$'
+      WHEN TRIM(src_ts6) RLIKE '^[0-9]{4}-[0-9]{2}-[0-9]{2}[T ][0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{6,}.*$'
         THEN CONCAT(
           REGEXP_REPLACE(REGEXP_EXTRACT(TRIM(src_ts6), '^(\\d{4}-\\d{2}-\\d{2}[T ]\\d{2}:\\d{2}:\\d{2})', 1), 'T', ' '),
           '.',
-          SUBSTR(REGEXP_EXTRACT(TRIM(src_ts6), '^[0-9]{4}-[0-9]{2}-[0-9]{2}[T ][0-9]{2}:[0-9]{2}:[0-9]{2}\\.([0-9]{9})', 1), 1, 6),
+          SUBSTR(REGEXP_EXTRACT(TRIM(src_ts6), '^[0-9]{4}-[0-9]{2}-[0-9]{2}[T ][0-9]{2}:[0-9]{2}:[0-9]{2}\\.([0-9]{6,})', 1), 1, 6),
           REGEXP_REPLACE(
             REGEXP_REPLACE(
-            CONCAT(';$1::', CAST(CAST(UNIX_TIMESTAMP(CURRENT_TIMESTAMP()) AS BIGINT) * 1000 AS STRING), ':I')
-                CASE
-                  WHEN REGEXP_EXTRACT(TRIM(src_ts6), '(Z|[+-]\\d{2}:?\\d{2})', 1) = ''
-          CONCAT('$1::', CAST(CAST(UNIX_TIMESTAMP(CURRENT_TIMESTAMP()) AS BIGINT) * 1000 AS STRING), ':I')
-                  ELSE REGEXP_REPLACE(REGEXP_EXTRACT(TRIM(src_ts6), '(Z|[+-]\\d{2}:?\\d{2})', 1), '^Z$', '+00')
-                END,
-                '^([+-]\\d{2})(\\d{2})$', '$1:$2'
-              ),
-              '^([+-]\\d{2}):00$', '$1'
+              CASE
+                WHEN REGEXP_EXTRACT(TRIM(src_ts6), '(Z|[+-]\\d{2}:?\\d{2})', 1) = ''
+                  THEN CASE WHEN TRIM(src_ts6) LIKE '%Europe/Moscow%' THEN '+03' ELSE '+00' END
+                ELSE REGEXP_EXTRACT(TRIM(src_ts6), '(Z|[+-]\\d{2}:?\\d{2})', 1)
+              END,
+              '^Z$',
+              '+00'
             ),
-            '^([+-]\\d{2})00$', '$1'
+            ':00$',
+            ''
           )
         )
       ELSE NULL
