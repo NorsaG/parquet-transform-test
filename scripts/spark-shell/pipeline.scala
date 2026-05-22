@@ -455,10 +455,10 @@ val transformedViewSql = """
                       ''
                     ),
                     'key:([^,;]*),type:([^,;]*)(,[^;]*)?',
-                    CONCAT('$1:$2|', CAST(CAST(UNIX_TIMESTAMP(CURRENT_TIMESTAMP()) AS BIGINT) * 1000 AS STRING), ':I')
+                    CONCAT('$1:$2:', CAST(CAST(UNIX_TIMESTAMP(CURRENT_TIMESTAMP()) AS BIGINT) * 1000 AS STRING), ':I')
                   ),
                   'type:([^,;]*),key:([^,;]*)(,[^;]*)?',
-                  CONCAT('$2:$1|', CAST(CAST(UNIX_TIMESTAMP(CURRENT_TIMESTAMP()) AS BIGINT) * 1000 AS STRING), ':I')
+                  CONCAT('$2:$1:', CAST(CAST(UNIX_TIMESTAMP(CURRENT_TIMESTAMP()) AS BIGINT) * 1000 AS STRING), ':I')
                 ),
                 ':|',
                 '::'
