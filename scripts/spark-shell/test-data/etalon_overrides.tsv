@@ -70,11 +70,11 @@ TS10|null|EXACT|<NULL>
 TS10|nan|ERROR|<NULL>
 TS10|pos_inf|ERROR|<NULL>
 TS10|neg_inf|ERROR|<NULL>
-TS19|replace_success|EXACT|part one text:part two text
-TS19|no_dot_left|EXACT|partone:part two
-TS19|dot_right_kept|EXACT|a.b:c.d
+TS19|replace_success|EXACT|part_one_text:part.two.text
+TS19|no_dot_left|EXACT|partone:part.two
+TS19|dot_right_kept|EXACT|a_b:c.d
 TS19|empty_left|EXACT|:part2
-TS19|empty_right|EXACT|part1.:
+TS19|empty_right|EXACT|part1_:
 TS19|null|EXACT|<NULL>
 TS19|empty|EXACT|<EMPTY>
 TS19|no_colon|ERROR|<NULL>

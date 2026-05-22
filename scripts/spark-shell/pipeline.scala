@@ -421,18 +421,11 @@ val transformedViewSql = """
     CASE
       WHEN src_ts19 IS NULL THEN NULL
       WHEN TRIM(src_ts19) = '' THEN ''
-      WHEN src_ts19 = 'a.b:c.d' THEN 'a.b:c.d'
       WHEN LENGTH(src_ts19) - LENGTH(REGEXP_REPLACE(src_ts19, ':', '')) = 1
         THEN CONCAT(
-          CASE
-            WHEN SPLIT(src_ts19, ':')[1] = '' OR SPLIT(src_ts19, ':')[0] = '' THEN SPLIT(src_ts19, ':')[0]
-            ELSE REGEXP_REPLACE(SPLIT(src_ts19, ':')[0], '\\.', ' ')
-          END,
+          REGEXP_REPLACE(REGEXP_EXTRACT(src_ts19, '^([^:]*):', 1), '\\.', '_'),
           ':',
-          CASE
-            WHEN SPLIT(src_ts19, ':')[1] = '' OR SPLIT(src_ts19, ':')[0] = '' THEN SPLIT(src_ts19, ':')[1]
-            ELSE REGEXP_REPLACE(SPLIT(src_ts19, ':')[1], '\\.', ' ')
-          END
+          REGEXP_REPLACE(REGEXP_EXTRACT(src_ts19, '^[^:]*:(.*)$', 1), '\\s', '.')
         )
       ELSE NULL
     END AS ts19,
